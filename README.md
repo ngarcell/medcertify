@@ -1,2 +1,0 @@
-# medcertify
-Created by Rork

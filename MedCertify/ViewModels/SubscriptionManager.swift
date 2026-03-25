@@ -7,8 +7,13 @@ class SubscriptionManager {
     static let subscriptionsOfferedInApp = false
 
     // MARK: - Product Identifiers
+    /// Primary product IDs expected in App Store Connect.
     static let annualProductID = "com.medcertify.pro.annual"
     static let monthlyProductID = "com.medcertify.pro.monthly"
+
+    /// Legacy / fallback IDs accepted during migrations.
+    static let legacyAnnualProductID = "com.socialreporthq.credvault.pro.annual"
+    static let legacyMonthlyProductID = "com.socialreporthq.credvault.pro.monthly"
 
     // MARK: - State
     var isPro: Bool = false
@@ -18,6 +23,31 @@ class SubscriptionManager {
     var purchaseInProgress: Bool = false
     var purchaseError: String?
     var transactionListenerTask: Task<Void, Error>?
+
+    private static var annualProductIDs: [String] {
+        var ids = [annualProductID, legacyAnnualProductID]
+        if let bundleID = Bundle.main.bundleIdentifier {
+            ids.append("\(bundleID).pro.annual")
+        }
+        return dedupe(ids)
+    }
+
+    private static var monthlyProductIDs: [String] {
+        var ids = [monthlyProductID, legacyMonthlyProductID]
+        if let bundleID = Bundle.main.bundleIdentifier {
+            ids.append("\(bundleID).pro.monthly")
+        }
+        return dedupe(ids)
+    }
+
+    private static var allProductIDs: [String] {
+        dedupe(annualProductIDs + monthlyProductIDs)
+    }
+
+    private static func dedupe(_ ids: [String]) -> [String] {
+        var seen = Set<String>()
+        return ids.filter { seen.insert($0).inserted }
+    }
 
     // MARK: - Persisted State
     private let isProKey = "medcertify_isPro"
@@ -57,20 +87,17 @@ class SubscriptionManager {
         // Clear any previous error when reloading product information.
         purchaseError = nil
         do {
-            let storeProducts = try await Product.products(for: [
-                Self.annualProductID,
-                Self.monthlyProductID
-            ])
+            let storeProducts = try await Product.products(for: Self.allProductIDs)
             products = storeProducts.sorted { $0.price > $1.price }
 
             // If one (or both) products are missing, treat it as a recoverable configuration issue.
             let loadedIDs = Set(storeProducts.map { $0.id })
             var missing: [String] = []
-            if !loadedIDs.contains(Self.annualProductID) { missing.append(Self.annualProductID) }
-            if !loadedIDs.contains(Self.monthlyProductID) { missing.append(Self.monthlyProductID) }
+            if !Self.annualProductIDs.contains(where: loadedIDs.contains) { missing.append("annual") }
+            if !Self.monthlyProductIDs.contains(where: loadedIDs.contains) { missing.append("monthly") }
             if !missing.isEmpty {
                 purchaseError = "Subscription options are not available right now. Please try again."
-                print("Missing expected subscription products: \(missing)")
+                print("Missing expected subscription products (\(missing)). Loaded IDs: \(loadedIDs)")
             }
         } catch {
             purchaseError = "Unable to load subscription options. Please try again."
@@ -113,10 +140,10 @@ class SubscriptionManager {
 
     func purchaseAnnual() async {
         guard Self.subscriptionsOfferedInApp else { return }
-        var product = products.first(where: { $0.id == Self.annualProductID })
+        var product = annualProduct
         if product == nil {
             await loadProducts()
-            product = products.first(where: { $0.id == Self.annualProductID })
+            product = annualProduct
         }
         guard let product else {
             purchaseError = "Annual subscription is unavailable right now. Check your connection or try again later."
@@ -127,10 +154,10 @@ class SubscriptionManager {
 
     func purchaseMonthly() async {
         guard Self.subscriptionsOfferedInApp else { return }
-        var product = products.first(where: { $0.id == Self.monthlyProductID })
+        var product = monthlyProduct
         if product == nil {
             await loadProducts()
-            product = products.first(where: { $0.id == Self.monthlyProductID })
+            product = monthlyProduct
         }
         guard let product else {
             purchaseError = "Monthly subscription is unavailable right now. Check your connection or try again later."
@@ -202,8 +229,7 @@ class SubscriptionManager {
 
         for await result in Transaction.currentEntitlements {
             if case .verified(let transaction) = result {
-                if transaction.productID == Self.annualProductID ||
-                   transaction.productID == Self.monthlyProductID {
+                if Self.allProductIDs.contains(transaction.productID) {
                     if transaction.revocationDate == nil {
                         hasActiveSubscription = true
                     }
@@ -263,11 +289,11 @@ class SubscriptionManager {
     }
 
     var annualProduct: Product? {
-        products.first { $0.id == Self.annualProductID }
+        products.first { Self.annualProductIDs.contains($0.id) }
     }
 
     var monthlyProduct: Product? {
-        products.first { $0.id == Self.monthlyProductID }
+        products.first { Self.monthlyProductIDs.contains($0.id) }
     }
 }
 

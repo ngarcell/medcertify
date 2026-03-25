@@ -437,7 +437,7 @@ final class NotificationManager {
         UNUserNotificationCenter.current().add(request)
     }
 
-    // MARK: - Trial Reminder
+    // MARK: - Trial ReminderS
 
     func scheduleTrialEndReminder() {
         let content = UNMutableNotificationContent()

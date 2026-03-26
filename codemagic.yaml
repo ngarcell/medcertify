@@ -1,0 +1,36 @@
+workflows:
+  ios-workflow:
+    name: iOS Workflow
+    max_build_duration: 120
+    instance_type: mac_mini_m2
+    environment:
+      groups:
+        - apple_credentials # You will need to set this up in Codemagic UI
+      vars:
+        XCODE_PROJECT: "MedCertify.xcodeproj"
+        XCODE_SCHEME: "MedCertify"
+        BUNDLE_ID: "com.medcertify.app" # Replace with your actual bundle ID if different
+    scripts:
+      - name: Initialize keychain
+        script: |
+          keychain initialize
+      - name: Fetch certificates and provisioning profiles
+        script: |
+          app-store-connect fetch-signing-files "$BUNDLE_ID" --project-type ios --install
+      - name: Set up code signing settings on Xcode project
+        script: |
+          xcode-project use-profiles
+      - name: Build ipa for distribution
+        script: |
+          xcode-project build-ipa \
+            --project "$XCODE_PROJECT" \
+            --scheme "$XCODE_SCHEME" \
+            --archive-flags="-destination 'generic/platform=iOS'"
+    artifacts:
+      - build/ios/ipa/*.ipa
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true
+        beta_groups:
+          - Internal

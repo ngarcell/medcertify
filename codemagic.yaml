@@ -1,3 +1,6 @@
+integrations:
+  app_store_connect: medcertify_asc_integration # This name must match the integration name in Codemagic UI
+
 workflows:
   ios-workflow:
     name: iOS Workflow
@@ -5,11 +8,11 @@ workflows:
     instance_type: mac_mini_m2
     environment:
       groups:
-        - apple_credentials # You will need to set this up in Codemagic UI
+        - apple_credentials
       vars:
         XCODE_PROJECT: "MedCertify.xcodeproj"
         XCODE_SCHEME: "MedCertify"
-        BUNDLE_ID: "com.medcertify.app" # Replace with your actual bundle ID if different
+        BUNDLE_ID: "com.medcertify.app"
     scripts:
       - name: Initialize keychain
         script: |

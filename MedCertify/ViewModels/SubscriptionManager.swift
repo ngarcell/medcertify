@@ -4,7 +4,7 @@ import StoreKit
 @MainActor @Observable
 class SubscriptionManager {
     /// Set to `true` after Paid Apps Agreement, banking/tax, and subscription products are live in App Store Connect.
-    static let subscriptionsOfferedInApp = false
+    static let subscriptionsOfferedInApp = true
 
     // MARK: - Product Identifiers
     /// Primary product IDs expected in App Store Connect.

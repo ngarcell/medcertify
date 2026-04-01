@@ -324,7 +324,7 @@ struct PaywallView: View {
         } else if subscriptionManager.isPro {
             // Schedule trial end reminder for annual plan
             if selectedPlan == .annual {
-                NotificationManager.shared.scheduleTrialEndReminder()
+                await NotificationManager.shared.scheduleTrialEndReminder()
             }
             onSubscribe()
         }

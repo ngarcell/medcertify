@@ -211,7 +211,7 @@ struct SettingsView: View {
                 if enabled {
                     Task {
                         _ = await NotificationManager.shared.requestAuthorization()
-                        NotificationManager.shared.refreshAllReminders(for: credentials)
+                        await NotificationManager.shared.refreshAllReminders(for: credentials)
                     }
                 }
             }

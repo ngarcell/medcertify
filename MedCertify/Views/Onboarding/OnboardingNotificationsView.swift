@@ -87,11 +87,10 @@ struct OnboardingNotificationsView: View {
     }
 
     private func requestNotifications() {
-        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .badge, .sound]) { granted, _ in
-            DispatchQueue.main.async {
-                viewModel.notificationsEnabled = granted
-                viewModel.nextPage()
-            }
+        Task {
+            let granted = await NotificationManager.shared.requestAuthorization()
+            viewModel.notificationsEnabled = granted
+            viewModel.nextPage()
         }
     }
 }

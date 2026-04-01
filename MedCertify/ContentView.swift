@@ -87,44 +87,36 @@ struct ContentView: View {
         var error: NSError?
 
         if context.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: &error) {
-            context.evaluatePolicy(
-                .deviceOwnerAuthenticationWithBiometrics,
-                localizedReason: "Unlock MedCertify to access your credentials"
-            ) { success, _ in
-                DispatchQueue.main.async {
-                    if success {
-                        withAnimation {
-                            isUnlocked = true
-                            authenticationFailed = false
-                        }
-                    } else {
-                        withAnimation {
-                            authenticationFailed = true
-                        }
+            Task {
+                do {
+                    let success = try await context.evaluatePolicy(
+                        .deviceOwnerAuthenticationWithBiometrics,
+                        localizedReason: "Unlock MedCertify to access your credentials"
+                    )
+                    withAnimation {
+                        isUnlocked = success
+                        authenticationFailed = !success
                     }
+                } catch {
+                    withAnimation { authenticationFailed = true }
                 }
             }
         } else if context.canEvaluatePolicy(.deviceOwnerAuthentication, error: &error) {
-            // Fallback to passcode
-            context.evaluatePolicy(
-                .deviceOwnerAuthentication,
-                localizedReason: "Unlock MedCertify to access your credentials"
-            ) { success, _ in
-                DispatchQueue.main.async {
-                    if success {
-                        withAnimation {
-                            isUnlocked = true
-                            authenticationFailed = false
-                        }
-                    } else {
-                        withAnimation {
-                            authenticationFailed = true
-                        }
+            Task {
+                do {
+                    let success = try await context.evaluatePolicy(
+                        .deviceOwnerAuthentication,
+                        localizedReason: "Unlock MedCertify to access your credentials"
+                    )
+                    withAnimation {
+                        isUnlocked = success
+                        authenticationFailed = !success
                     }
+                } catch {
+                    withAnimation { authenticationFailed = true }
                 }
             }
         } else {
-            // No authentication available — unlock directly
             isUnlocked = true
         }
     }

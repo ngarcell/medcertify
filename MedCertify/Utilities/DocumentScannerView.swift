@@ -2,7 +2,6 @@ import SwiftUI
 import VisionKit
 import PDFKit
 
-/// VNDocumentCameraViewController wrapper for SwiftUI
 struct DocumentScannerView: UIViewControllerRepresentable {
     var onScanComplete: (Data, String) -> Void
     var onCancel: () -> Void
@@ -19,7 +18,7 @@ struct DocumentScannerView: UIViewControllerRepresentable {
 
     func updateUIViewController(_ uiViewController: VNDocumentCameraViewController, context: Context) {}
 
-    class Coordinator: NSObject, VNDocumentCameraViewControllerDelegate {
+    class Coordinator: NSObject, @preconcurrency VNDocumentCameraViewControllerDelegate {
         let onScanComplete: (Data, String) -> Void
         let onCancel: () -> Void
 
@@ -29,7 +28,6 @@ struct DocumentScannerView: UIViewControllerRepresentable {
         }
 
         func documentCameraViewController(_ controller: VNDocumentCameraViewController, didFinishWith scan: VNDocumentCameraScan) {
-            // Combine all scanned pages into a single PDF
             let pdfDocument = PDFDocument()
 
             for pageIndex in 0..<scan.pageCount {
@@ -44,7 +42,6 @@ struct DocumentScannerView: UIViewControllerRepresentable {
             if let pdfData = pdfDocument.dataRepresentation() {
                 onScanComplete(pdfData, fileName)
             } else if let jpegData = scan.imageOfPage(at: 0).jpegData(compressionQuality: 0.9) {
-                // Fallback: save first page as JPEG
                 onScanComplete(jpegData, fileName)
             }
         }
@@ -59,4 +56,3 @@ struct DocumentScannerView: UIViewControllerRepresentable {
         }
     }
 }
-

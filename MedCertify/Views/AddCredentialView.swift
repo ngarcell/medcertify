@@ -145,7 +145,7 @@ struct AddCredentialView: View {
 
         // Schedule renewal reminders for Pro users
         if subscriptionManager.isPro {
-            NotificationManager.shared.scheduleRenewalReminders(for: credential)
+            Task { await NotificationManager.shared.scheduleRenewalReminders(for: credential) }
         }
     }
 }

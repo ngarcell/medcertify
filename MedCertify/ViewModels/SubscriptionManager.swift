@@ -297,7 +297,7 @@ class SubscriptionManager {
     }
 }
 
-enum StoreError: Error {
+nonisolated enum StoreError: Error, Sendable {
     case failedVerification
 }
 
@@ -324,7 +324,7 @@ final class NotificationManager {
 
     // MARK: - Schedule Renewal Reminders
 
-    func scheduleRenewalReminders(for credential: Credential) {
+    func scheduleRenewalReminders(for credential: Credential) async {
         guard let expirationDate = credential.expirationDate else { return }
 
         cancelReminders(for: credential)
@@ -365,10 +365,10 @@ final class NotificationManager {
             let identifier = notificationId(for: credential, daysBefore: daysBefore)
             let request = UNNotificationRequest(identifier: identifier, content: content, trigger: trigger)
 
-            UNUserNotificationCenter.current().add(request) { error in
-                if let error {
-                    print("Failed to schedule notification: \(error)")
-                }
+            do {
+                try await UNUserNotificationCenter.current().add(request)
+            } catch {
+                print("Failed to schedule notification: \(error)")
             }
         }
     }
@@ -384,17 +384,17 @@ final class NotificationManager {
 
     // MARK: - Refresh All
 
-    func refreshAllReminders(for credentials: [Credential]) {
+    func refreshAllReminders(for credentials: [Credential]) async {
         UNUserNotificationCenter.current().removeAllPendingNotificationRequests()
 
         for credential in credentials {
-            scheduleRenewalReminders(for: credential)
+            await scheduleRenewalReminders(for: credential)
         }
     }
 
     // MARK: - Expired Credential Alert
 
-    func scheduleExpiredAlert(for credential: Credential) {
+    func scheduleExpiredAlert(for credential: Credential) async {
         guard let expirationDate = credential.expirationDate,
               expirationDate < Date() else { return }
 
@@ -413,12 +413,12 @@ final class NotificationManager {
         let identifier = "expired_\(credential.id.uuidString)"
         let request = UNNotificationRequest(identifier: identifier, content: content, trigger: trigger)
 
-        UNUserNotificationCenter.current().add(request)
+        try? await UNUserNotificationCenter.current().add(request)
     }
 
     // MARK: - CME Pace Reminder
 
-    func scheduleCMEPaceReminder(hoursNeeded: Double, deadline: Date) {
+    func scheduleCMEPaceReminder(hoursNeeded: Double, deadline: Date) async {
         let content = UNMutableNotificationContent()
         let monthsLeft = max(1, Calendar.current.dateComponents([.month], from: Date(), to: deadline).month ?? 1)
         let pacePerMonth = hoursNeeded / Double(monthsLeft)
@@ -434,12 +434,12 @@ final class NotificationManager {
         let trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: true)
 
         let request = UNNotificationRequest(identifier: "cme_pace_monthly", content: content, trigger: trigger)
-        UNUserNotificationCenter.current().add(request)
+        try? await UNUserNotificationCenter.current().add(request)
     }
 
     // MARK: - Trial ReminderS
 
-    func scheduleTrialEndReminder() {
+    func scheduleTrialEndReminder() async {
         let content = UNMutableNotificationContent()
         content.title = "Free Trial Ending Tomorrow"
         content.body = "Your MedCertify Pro trial ends tomorrow. Your credentials are safe — keep full access by subscribing."
@@ -454,7 +454,7 @@ final class NotificationManager {
         let trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: false)
 
         let request = UNNotificationRequest(identifier: "trial_end_reminder", content: content, trigger: trigger)
-        UNUserNotificationCenter.current().add(request)
+        try? await UNUserNotificationCenter.current().add(request)
     }
 
     // MARK: - Helpers

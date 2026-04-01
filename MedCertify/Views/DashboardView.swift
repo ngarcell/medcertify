@@ -5,11 +5,13 @@ import VisionKit
 struct DashboardView: View {
     let credentialVM: CredentialViewModel
     let cmeVM: CMEViewModel
+
     @Environment(\.modelContext) private var modelContext
     @Environment(SubscriptionManager.self) private var subscriptionManager
     @Query(sort: \Credential.expirationDate) private var credentials: [Credential]
     @Query(sort: \CMEActivity.dateCompleted, order: .reverse) private var activities: [CMEActivity]
     @Query private var cycles: [CMECycle]
+
     @State private var showAddCredential: Bool = false
     @State private var showAddCME: Bool = false
     @State private var showPaywall: Bool = false
@@ -23,16 +25,22 @@ struct DashboardView: View {
         credentialVM.upcomingRenewals(credentials)
     }
 
+    private var compliancePercentage: Int {
+        guard !credentials.isEmpty else { return 100 }
+        let activeCount = credentials.filter { $0.status == .current }.count
+        return Int((Double(activeCount) / Double(credentials.count) * 100).rounded())
+    }
+
+    private var sortedCredentials: [Credential] {
+        credentials.sorted { ($0.daysUntilExpiration ?? Int.max) < ($1.daysUntilExpiration ?? Int.max) }
+    }
+
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(spacing: 20) {
-                    if !subscriptionManager.isPro {
-                        upgradeBanner
-                    }
-
-                    healthScoreCard
-                    quickActionsRow
+                VStack(alignment: .leading, spacing: 28) {
+                    topIdentityBar
+                    welcomeSection
 
                     if !upcomingRenewals.isEmpty {
                         alertsSection
@@ -42,13 +50,21 @@ struct DashboardView: View {
                         cmeProgressSection(cycle: cycle)
                     }
 
-                    timelineSection
+                    credentialsSection
                 }
-                .padding(.horizontal)
-                .padding(.bottom, 20)
+                .padding(.horizontal, 24)
+                .padding(.top, 16)
+                .padding(.bottom, 120)
             }
-            .background(Color(.systemGroupedBackground))
-            .navigationTitle("Dashboard")
+            .background(Theme.surfaceBase)
+            .toolbar(.hidden, for: .navigationBar)
+            .safeAreaInset(edge: .bottom) {
+                addCredentialBar
+                    .padding(.horizontal, 20)
+                    .padding(.top, 8)
+                    .padding(.bottom, 8)
+                    .background(.bar)
+            }
             .sheet(isPresented: $showAddCredential) {
                 AddCredentialView(viewModel: credentialVM)
             }
@@ -82,190 +98,169 @@ struct DashboardView: View {
         }
     }
 
-    // MARK: - Upgrade Banner
-
-    private var upgradeBanner: some View {
-        Button {
-            showPaywall = true
-        } label: {
+    private var topIdentityBar: some View {
+        HStack(spacing: 12) {
             HStack(spacing: 12) {
-                Image(systemName: "crown.fill")
-                    .font(.title3)
-                    .foregroundStyle(Theme.credentialGold)
+                ZStack {
+                    Circle()
+                        .fill(.white)
+                        .frame(width: 48, height: 48)
+                        .shadow(color: .black.opacity(0.06), radius: 10, y: 4)
+
+                    Circle()
+                        .stroke(Theme.primaryGradient, lineWidth: 2.5)
+                        .frame(width: 48, height: 48)
+
+                    Image(systemName: "person.crop.circle.fill")
+                        .font(.system(size: 28))
+                        .symbolRenderingMode(.hierarchical)
+                        .foregroundStyle(Theme.medicalBlue)
+                }
 
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("Upgrade to Pro")
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(.primary)
-                    Text("Unlock reminders, CME tracking, and more")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                    Text("Clinical Precision")
+                        .font(.headline.weight(.bold))
+                        .foregroundStyle(Theme.headerText)
+                    HStack(spacing: 6) {
+                        Circle()
+                            .fill(Theme.warningGold)
+                            .frame(width: 6, height: 6)
+                        Text("ACTIVE STATUS")
+                            .font(.caption.weight(.semibold))
+                            .tracking(1.8)
+                            .foregroundStyle(Theme.statusAmber)
+                    }
                 }
-                Spacer()
-                Image(systemName: "chevron.right")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(.secondary)
             }
-            .padding(14)
-            .background(
-                LinearGradient(
-                    colors: [Theme.credentialGold.opacity(0.12), Theme.credentialGold.opacity(0.04)],
-                    startPoint: .leading,
-                    endPoint: .trailing
-                )
-            )
-            .clipShape(.rect(cornerRadius: 14))
-            .overlay(
-                RoundedRectangle(cornerRadius: 14)
-                    .strokeBorder(Theme.credentialGold.opacity(0.3), lineWidth: 1)
-            )
+
+            Spacer()
+
+            Button {
+            } label: {
+                Image(systemName: "bell.fill")
+                    .font(.headline)
+                    .foregroundStyle(Theme.mutedLabel)
+                    .frame(width: 44, height: 44)
+                    .background(Theme.surfaceCard, in: .circle)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Notifications")
         }
     }
 
-    // MARK: - Health Score Card
+    private var welcomeSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Welcome, Dr. Aris")
+                .font(.system(.largeTitle, design: .default, weight: .bold))
+                .foregroundStyle(Theme.headerText)
 
-    private var healthScoreCard: some View {
-        VStack(spacing: 14) {
-            HStack(spacing: 14) {
-                Image(systemName: healthScore.icon)
-                    .font(.system(size: 36))
-                    .foregroundStyle(healthScoreColor)
-                    .symbolEffect(.pulse, value: healthScore.title)
-
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(healthScore.title)
-                        .font(.title3.weight(.bold))
-                    Text("\(credentials.count) credential\(credentials.count == 1 ? "" : "s") tracked")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                }
-                Spacer()
-            }
-
-            if !credentials.isEmpty {
-                HStack(spacing: 8) {
-                    StatusPill(count: credentials.filter { $0.status == .current }.count, label: "Current", color: Theme.statusGreen)
-                    StatusPill(count: credentials.filter { $0.status == .expiringSoon }.count, label: "Expiring", color: Theme.statusAmber)
-                    StatusPill(count: credentials.filter { $0.status == .expired }.count, label: "Expired", color: Theme.statusRed)
-                }
-            }
-        }
-        .padding(16)
-        .background(Color(.secondarySystemGroupedBackground))
-        .clipShape(.rect(cornerRadius: 16))
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("Credential Health: \(healthScore.title). \(credentials.count) credentials tracked.")
-        .accessibilityHint("Shows your overall credential compliance status")
-    }
-
-    private var healthScoreColor: Color {
-        switch healthScore {
-        case .good: return Theme.statusGreen
-        case .attention: return Theme.statusAmber
-        case .critical: return Theme.statusRed
+            Text("Your clinical credentials are \(compliancePercentage)% compliant.")
+                .font(.title3)
+                .foregroundStyle(.secondary)
         }
     }
-
-    // MARK: - Quick Actions
-
-    private var quickActionsRow: some View {
-        HStack(spacing: 12) {
-            QuickActionButton(icon: "plus.circle.fill", label: "Add\nCredential", color: Theme.medicalBlue) {
-                if subscriptionManager.checkCredentialLimit(currentCount: credentials.count) {
-                    showAddCredential = true
-                } else {
-                    subscriptionManager.triggerPaywall(reason: "You've hit your free limit. Upgrade to track all your credentials.")
-                    showPaywall = true
-                }
-            }
-            QuickActionButton(icon: "book.circle.fill", label: "Log\nCME", color: Theme.credentialGold) {
-                if subscriptionManager.isPro {
-                    showAddCME = true
-                } else {
-                    subscriptionManager.triggerPaywall(reason: "Track CME hours and certificates with Pro.")
-                    showPaywall = true
-                }
-            }
-            QuickActionButton(icon: "camera.circle.fill", label: "Scan\nCertificate", color: Theme.statusGreen) {
-                if subscriptionManager.isPro {
-                    showScanner = true
-                } else {
-                    subscriptionManager.triggerPaywall(reason: "Scan and store certificates with Pro.")
-                    showPaywall = true
-                }
-            }
-        }
-    }
-
-    // MARK: - Alerts Section
 
     private var alertsSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Label("Needs Attention", systemImage: "exclamationmark.triangle.fill")
-                .font(.headline)
-                .foregroundStyle(Theme.statusAmber)
+        VStack(alignment: .leading, spacing: 14) {
+            sectionEyebrow("Urgent Alerts")
 
-            ForEach(upcomingRenewals) { credential in
+            ForEach(upcomingRenewals.prefix(2)) { credential in
                 CredentialAlertCard(credential: credential)
             }
         }
     }
 
-    // MARK: - CME Progress
-
     private func cmeProgressSection(cycle: CMECycle) -> some View {
         let cycleActivities = cmeVM.activitiesForCycle(activities, cycle: cycle)
         let totalHours = cmeVM.totalHours(cycleActivities)
-        let progress = min(totalHours / cycle.totalHoursRequired, 1.0)
+        let progress = min(totalHours / max(cycle.totalHoursRequired, 1), 1.0)
+        let categoryOneHours = cycleActivities
+            .filter { $0.creditType.localizedStandardContains("Category 1") }
+            .reduce(0) { $0 + $1.hours }
+        let categoryTwoHours = cycleActivities
+            .filter { $0.creditType.localizedStandardContains("Category 2") }
+            .reduce(0) { $0 + $1.hours }
 
-        return VStack(alignment: .leading, spacing: 12) {
+        return VStack(alignment: .leading, spacing: 18) {
             HStack {
-                Label("CME Progress", systemImage: "book.fill")
-                    .font(.headline)
+                sectionEyebrow("CME Progress")
                 Spacer()
-                Text("\(totalHours, specifier: "%.1f") of \(cycle.totalHoursRequired, specifier: "%.0f") hrs")
-                    .font(.subheadline.weight(.medium))
-                    .foregroundStyle(.secondary)
+                Button {
+                } label: {
+                    Image(systemName: "ellipsis")
+                        .font(.subheadline.weight(.bold))
+                        .foregroundStyle(Theme.mutedLabel)
+                        .frame(width: 32, height: 32)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("More CME options")
             }
 
-            VStack(spacing: 8) {
-                GeometryReader { geo in
-                    ZStack(alignment: .leading) {
-                        Capsule()
-                            .fill(Color(.systemGray5))
-                            .frame(height: 10)
-                        Capsule()
-                            .fill(progress >= 1 ? Theme.statusGreen : Theme.medicalBlue)
-                            .frame(width: geo.size.width * progress, height: 10)
+            HStack {
+                Spacer()
+                ZStack {
+                    Circle()
+                        .stroke(Color(.systemGray5), lineWidth: 14)
+                        .frame(width: 176, height: 176)
+
+                    Circle()
+                        .trim(from: 0, to: progress)
+                        .stroke(Theme.medicalBlue, style: StrokeStyle(lineWidth: 14, lineCap: .round))
+                        .rotationEffect(.degrees(-90))
+                        .frame(width: 176, height: 176)
+
+                    VStack(spacing: 2) {
+                        Text("\(Int(totalHours.rounded()))")
+                            .font(.system(.largeTitle, design: .default, weight: .bold))
+                            .foregroundStyle(Theme.headerText)
+                            .monospacedDigit()
+                        Text("OF \(Int(cycle.totalHoursRequired.rounded())) CREDITS")
+                            .font(.caption.weight(.bold))
+                            .tracking(1.2)
+                            .foregroundStyle(Theme.headerText.opacity(0.85))
                     }
                 }
-                .frame(height: 10)
-                .accessibilityLabel("CME Progress: \(Int(progress * 100)) percent complete")
-
-                HStack {
-                    Text("\(max(0, cycle.totalHoursRequired - totalHours), specifier: "%.1f") hrs remaining")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    Spacer()
-                    Text("\(cycle.daysRemaining) days left in cycle")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
+                .padding(.vertical, 8)
+                Spacer()
             }
-            .padding(16)
-            .background(Color(.secondarySystemGroupedBackground))
-            .clipShape(.rect(cornerRadius: 14))
+
+            Divider()
+
+            HStack(spacing: 16) {
+                CMEMetricBar(
+                    title: "Category I",
+                    valueText: "\(Int(categoryOneHours.rounded())) / 40",
+                    progress: min(categoryOneHours / 40, 1)
+                )
+                CMEMetricBar(
+                    title: "Category II",
+                    valueText: "\(Int(categoryTwoHours.rounded())) / 10",
+                    progress: min(categoryTwoHours / 10, 1),
+                    tint: Theme.medicalBlueSecondary
+                )
+            }
+        }
+        .padding(22)
+        .background(Theme.surfaceRaised)
+        .clipShape(.rect(cornerRadius: 28))
+        .overlay {
+            RoundedRectangle(cornerRadius: 28)
+                .stroke(Theme.subtleBorder, lineWidth: 1)
         }
     }
 
-    // MARK: - Timeline
-
-    private var timelineSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
+    private var credentialsSection: some View {
+        VStack(alignment: .leading, spacing: 14) {
             HStack {
-                Label("Upcoming Renewals", systemImage: "calendar")
-                    .font(.headline)
+                sectionEyebrow("My Credentials")
                 Spacer()
+                Button {
+                } label: {
+                    Text("View All")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(Theme.medicalBlue)
+                }
+                .buttonStyle(.plain)
             }
 
             if credentials.isEmpty {
@@ -274,154 +269,253 @@ struct DashboardView: View {
                 } description: {
                     Text("Add your first credential to start tracking.")
                 }
-                .frame(height: 200)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 30)
+                .background(Theme.surfaceCard)
+                .clipShape(.rect(cornerRadius: 24))
             } else {
-                ForEach(credentials.sorted(by: { ($0.daysUntilExpiration ?? Int.max) < ($1.daysUntilExpiration ?? Int.max) })) { credential in
+                ForEach(sortedCredentials.prefix(3)) { credential in
                     CredentialTimelineCard(credential: credential)
                 }
             }
         }
     }
-}
 
-// MARK: - Supporting Views
-
-struct StatusPill: View {
-    let count: Int
-    let label: String
-    let color: Color
-
-    var body: some View {
-        HStack(spacing: 4) {
-            Text("\(count)")
-                .font(.subheadline.weight(.bold))
-            Text(label)
-                .font(.caption)
+    private var addCredentialBar: some View {
+        Button {
+            if subscriptionManager.checkCredentialLimit(currentCount: credentials.count) {
+                showAddCredential = true
+            } else {
+                subscriptionManager.triggerPaywall(reason: "You've hit your free limit. Upgrade to track all your credentials.")
+                showPaywall = true
+            }
+        } label: {
+            HStack(spacing: 12) {
+                Image(systemName: "plus.circle.fill")
+                    .font(.title3)
+                    .foregroundStyle(.white)
+                Text("Add New Credential")
+                    .font(.title3.weight(.bold))
+                    .foregroundStyle(.white)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 18)
+            .background(Theme.primaryGradient, in: .rect(cornerRadius: 16))
+            .shadow(color: Theme.medicalBlue.opacity(0.24), radius: 16, y: 10)
         }
-        .foregroundStyle(color)
-        .padding(.horizontal, 12)
-        .padding(.vertical, 6)
-        .background(color.opacity(0.12))
-        .clipShape(Capsule())
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(count) \(label)")
-        .accessibilityAddTraits(.isStaticText)
+        .buttonStyle(.plain)
+        .accessibilityHint("Adds a new credential")
+    }
+
+    private func sectionEyebrow(_ title: String) -> some View {
+        Text(title.uppercased())
+            .font(.caption.weight(.medium))
+            .tracking(3.2)
+            .foregroundStyle(Theme.mutedLabel)
     }
 }
 
-struct QuickActionButton: View {
-    let icon: String
-    let label: String
-    let color: Color
-    let action: () -> Void
+struct CMEMetricBar: View {
+    let title: String
+    let valueText: String
+    let progress: Double
+    var tint: Color = Theme.medicalBlue
 
     var body: some View {
-        Button(action: action) {
-            VStack(spacing: 8) {
-                Image(systemName: icon)
-                    .font(.system(size: 28))
-                    .foregroundStyle(color)
-                Text(label)
-                    .font(.caption2.weight(.medium))
-                    .multilineTextAlignment(.center)
-                    .foregroundStyle(.primary)
+        VStack(alignment: .leading, spacing: 8) {
+            Text(title.uppercased())
+                .font(.caption.weight(.medium))
+                .tracking(1.2)
+                .foregroundStyle(Theme.mutedLabel)
+
+            GeometryReader { geometry in
+                ZStack(alignment: .leading) {
+                    Capsule()
+                        .fill(Color(.systemGray5))
+                    Capsule()
+                        .fill(tint)
+                        .frame(width: geometry.size.width * progress)
+                }
             }
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 14)
-            .background(Color(.secondarySystemGroupedBackground))
-            .clipShape(.rect(cornerRadius: 14))
+            .frame(height: 8)
+
+            Text(valueText)
+                .font(.headline.weight(.semibold))
+                .foregroundStyle(Theme.headerText)
+                .monospacedDigit()
         }
-        .accessibilityLabel(label.replacingOccurrences(of: "\n", with: " "))
-        .accessibilityAddTraits(.isButton)
-        .accessibilityHint("Double tap to activate")
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
 
 struct CredentialAlertCard: View {
     let credential: Credential
 
-    var body: some View {
-        HStack(spacing: 12) {
-            Image(systemName: credential.credentialType.icon)
-                .font(.title3)
-                .foregroundStyle(Theme.statusColor(for: credential.status))
-                .frame(width: 36, height: 36)
-                .background(Theme.statusColor(for: credential.status).opacity(0.12))
-                .clipShape(.rect(cornerRadius: 8))
+    private var statusColor: Color {
+        Theme.statusColor(for: credential.status)
+    }
 
-            VStack(alignment: .leading, spacing: 2) {
-                Text(credential.name.isEmpty ? credential.credentialType.rawValue : credential.name)
-                    .font(.subheadline.weight(.semibold))
-                if let days = credential.daysUntilExpiration {
-                    Text(days < 0 ? "Expired \(abs(days)) days ago" : "Expires in \(days) days")
-                        .font(.caption)
-                        .foregroundStyle(Theme.statusColor(for: credential.status))
+    private var actionTitle: String {
+        credential.status == .expired ? "Renew Now" : "Review Details"
+    }
+
+    private var statusTitle: String {
+        switch credential.status {
+        case .expired:
+            return "EXPIRED"
+        case .expiringSoon:
+            return "EXPIRING"
+        case .current:
+            return "CURRENT"
+        case .pending:
+            return "PENDING"
+        }
+    }
+
+    private var subtitle: String {
+        guard let expirationDate = credential.expirationDate else {
+            return "Expiration date needed to maintain clinical privileges."
+        }
+
+        if let days = credential.daysUntilExpiration, days < 0 {
+            return "Expired on \(expirationDate.formatted(.dateTime.month(.abbreviated).day().year())). You must renew to maintain clinical privileges."
+        }
+
+        return "Expires in \(max(0, credential.daysUntilExpiration ?? 0)) days. Renewal window is now open in the portal."
+    }
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 0) {
+            RoundedRectangle(cornerRadius: 10)
+                .fill(statusColor)
+                .frame(width: 4)
+                .padding(.vertical, 18)
+
+            HStack(alignment: .top, spacing: 16) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(statusColor.opacity(0.14))
+                        .frame(width: 52, height: 52)
+                    Image(systemName: credential.status == .expired ? "exclamationmark.circle.fill" : "exclamationmark.triangle.fill")
+                        .font(.title3)
+                        .foregroundStyle(statusColor)
+                }
+
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack(alignment: .top) {
+                        Text(credential.name.isEmpty ? credential.credentialType.rawValue : credential.name)
+                            .font(.title3.weight(.semibold))
+                            .foregroundStyle(Theme.headerText)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+
+                        Text(statusTitle)
+                            .font(.caption.weight(.bold))
+                            .foregroundStyle(credential.status == .expired ? .white : Theme.headerText)
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 5)
+                            .background(credential.status == .expired ? statusColor : Theme.warningGold, in: .capsule)
+                    }
+
+                    Text(subtitle)
+                        .font(.body)
+                        .foregroundStyle(Theme.headerText.opacity(0.9))
+
+                    Button {
+                    } label: {
+                        HStack(spacing: 6) {
+                            Text(actionTitle)
+                            Image(systemName: "arrow.right")
+                        }
+                        .font(.headline.weight(.semibold))
+                        .foregroundStyle(Theme.medicalBlue)
+                    }
+                    .buttonStyle(.plain)
                 }
             }
-
-            Spacer()
-
-            Image(systemName: credential.status.icon)
-                .foregroundStyle(Theme.statusColor(for: credential.status))
+            .padding(20)
         }
-        .padding(12)
-        .background(Theme.statusColor(for: credential.status).opacity(0.06))
-        .clipShape(.rect(cornerRadius: 12))
+        .background(Theme.surfaceCard)
+        .clipShape(.rect(cornerRadius: 22))
+        .shadow(color: .black.opacity(0.05), radius: 16, y: 8)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(credential.name.isEmpty ? credential.credentialType.rawValue : credential.name), \(credential.status.rawValue), \(credential.daysUntilExpiration.map { $0 < 0 ? "expired \(abs($0)) days ago" : "expires in \($0) days" } ?? "no expiration date")")
     }
 }
 
 struct CredentialTimelineCard: View {
     let credential: Credential
 
+    private var title: String {
+        credential.name.isEmpty ? credential.credentialType.rawValue : credential.name
+    }
+
+    private var dateLabel: String {
+        guard let expirationDate = credential.expirationDate else { return "No expiration" }
+        return expirationDate.formatted(.dateTime.month(.abbreviated).year())
+    }
+
     var body: some View {
-        HStack(spacing: 14) {
-            VStack(spacing: 2) {
-                Circle()
-                    .fill(Theme.statusColor(for: credential.status))
-                    .frame(width: 10, height: 10)
-                Rectangle()
-                    .fill(Color(.systemGray4))
-                    .frame(width: 2)
+        HStack(spacing: 16) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(Theme.statusColor(for: credential.status).opacity(0.18))
+                    .frame(width: 48, height: 48)
+
+                Image(systemName: credential.credentialType.icon)
+                    .font(.title3)
+                    .foregroundStyle(Theme.medicalBlue)
             }
-            .frame(height: 60)
 
             VStack(alignment: .leading, spacing: 4) {
-                Text(credential.name.isEmpty ? credential.credentialType.rawValue : credential.name)
-                    .font(.subheadline.weight(.semibold))
-                HStack(spacing: 6) {
-                    if let state = credential.state {
-                        Text(state)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                    if let date = credential.expirationDate {
-                        Text(date.formatted(.dateTime.month(.abbreviated).day().year()))
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                }
+                Text(title)
+                    .font(.title3.weight(.semibold))
+                    .foregroundStyle(Theme.headerText)
+
+                Text(detailLine)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
             }
 
             Spacer()
 
-            if let days = credential.daysUntilExpiration {
-                VStack(alignment: .trailing, spacing: 2) {
-                    Text("\(max(0, days))")
-                        .font(.title3.weight(.bold).monospacedDigit())
-                        .foregroundStyle(Theme.statusColor(for: credential.status))
-                    Text("days")
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
+            VStack(alignment: .trailing, spacing: 4) {
+                Text(trailingLabelTitle)
+                    .font(.caption.weight(.medium))
+                    .tracking(0.8)
+                    .foregroundStyle(Theme.mutedLabel)
+                Text(dateLabel)
+                    .font(.title3.weight(.semibold))
+                    .foregroundStyle(Theme.headerText)
+                    .multilineTextAlignment(.trailing)
+                if credential.status == .current {
+                    Image(systemName: "checkmark.circle.fill")
+                        .foregroundStyle(Theme.medicalBlue)
                 }
             }
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 8)
-        .background(Color(.secondarySystemGroupedBackground))
-        .clipShape(.rect(cornerRadius: 12))
+        .padding(20)
+        .background(Theme.surfaceCard)
+        .clipShape(.rect(cornerRadius: 22))
+        .shadow(color: .black.opacity(0.04), radius: 14, y: 8)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(credential.name.isEmpty ? credential.credentialType.rawValue : credential.name), \(credential.daysUntilExpiration.map { "\(max(0, $0)) days remaining" } ?? "no expiration")")
+        .accessibilityLabel("\(title), \(detailLine), \(trailingLabelTitle) \(dateLabel)")
+    }
+
+    private var detailLine: String {
+        let number = credential.credentialNumber?.isEmpty == false ? "ID: \(credential.credentialNumber ?? "")" : credential.issuingBody
+        return "\(number) • \(credential.status.rawValue)"
+    }
+
+    private var trailingLabelTitle: String {
+        switch credential.status {
+        case .current:
+            return "NEXT REVIEW"
+        case .expiringSoon:
+            return "EXPIRES"
+        case .expired:
+            return "EXPIRED"
+        case .pending:
+            return "STATUS"
+        }
     }
 }

@@ -65,7 +65,7 @@ struct ContentView: View {
                     .foregroundStyle(Theme.medicalBlue)
                     .frame(width: 80, height: 80)
                     .background(Theme.medicalBlue.opacity(0.1))
-                    .clipShape(Circle())
+                    .clipShape(.circle)
             }
             .accessibilityLabel("Unlock with \(biometricTypeName)")
 

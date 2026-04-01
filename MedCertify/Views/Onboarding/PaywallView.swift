@@ -18,32 +18,38 @@ struct PaywallView: View {
     }
 
     var body: some View {
-        ScrollView {
-            VStack(spacing: 0) {
-                headerSection
-                planSelector
-                if SubscriptionManager.subscriptionsOfferedInApp, !isLoadingProducts, !selectedProductReady {
-                    Text("Couldn’t load subscription options. Pull down to try again.")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .multilineTextAlignment(.center)
-                        .padding(.horizontal, 32)
-                        .padding(.top, 16)
+        ZStack {
+            MedCertifyHeroBackground()
+
+            ScrollView {
+                VStack(spacing: 0) {
+                    headerSection
+                    planSelector
+
+                    if SubscriptionManager.subscriptionsOfferedInApp, !isLoadingProducts, !selectedProductReady {
+                        Text("Couldn’t load subscription options. Pull down to try again.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal, 32)
+                            .padding(.top, 16)
+                    }
+
+                    subscribeButton
+                    trialDisclaimer
+                    footerLinks
+                    dismissButton
                 }
-                subscribeButton
-                trialDisclaimer
-                footerLinks
-                dismissButton
             }
-        }
-        .scrollIndicators(.hidden)
-        .refreshable {
-            isLoadingProducts = true
-            await subscriptionManager.loadProducts()
-            isLoadingProducts = false
-            if let err = subscriptionManager.purchaseError {
-                errorMessage = err
-                subscriptionManager.purchaseError = nil
+            .scrollIndicators(.hidden)
+            .refreshable {
+                isLoadingProducts = true
+                await subscriptionManager.loadProducts()
+                isLoadingProducts = false
+                if let err = subscriptionManager.purchaseError {
+                    errorMessage = err
+                    subscriptionManager.purchaseError = nil
+                }
             }
         }
         .overlay {
@@ -82,13 +88,23 @@ struct PaywallView: View {
 
     private var headerSection: some View {
         VStack(spacing: 16) {
-            Image(systemName: "shield.checkered")
-                .font(.system(size: 44))
-                .foregroundStyle(Theme.medicalBlue)
-                .padding(.top, 20)
+            ZStack {
+                Circle()
+                    .fill(.white.opacity(0.92))
+                    .frame(width: 104, height: 104)
+                    .shadow(color: Theme.medicalBlue.opacity(0.12), radius: 20, y: 10)
+                Circle()
+                    .stroke(Theme.primaryGradient, lineWidth: 2.5)
+                    .frame(width: 104, height: 104)
+                Image(systemName: "shield.checkered")
+                    .font(.system(size: 44))
+                    .foregroundStyle(Theme.medicalBlue)
+            }
+            .padding(.top, 20)
 
             Text("Protect your career")
                 .font(.title.bold())
+                .foregroundStyle(Theme.headerText)
 
             Text("A license lapse costs $5,000–$50,000+ in lost income.\nMedCertify costs less than one patient visit.")
                 .font(.subheadline)
@@ -103,7 +119,6 @@ struct PaywallView: View {
 
     private var planSelector: some View {
         VStack(spacing: 12) {
-            // Annual plan
             Button {
                 withAnimation(.spring(duration: 0.2)) { selectedPlan = .annual }
             } label: {
@@ -115,7 +130,7 @@ struct PaywallView: View {
                             .padding(.horizontal, 8)
                             .padding(.vertical, 3)
                             .background(Theme.credentialGold)
-                            .clipShape(Capsule())
+                            .clipShape(.capsule)
                         Spacer()
                     }
                     .padding(.bottom, 10)
@@ -150,19 +165,18 @@ struct PaywallView: View {
                 .background(
                     selectedPlan == .annual
                         ? Theme.medicalBlue.opacity(0.08)
-                        : Color(.secondarySystemGroupedBackground)
+                        : Theme.surfaceMuted
                 )
                 .clipShape(.rect(cornerRadius: 14))
                 .overlay(
                     RoundedRectangle(cornerRadius: 14)
                         .strokeBorder(
-                            selectedPlan == .annual ? Theme.medicalBlue : Color.clear,
-                            lineWidth: 2
+                            selectedPlan == .annual ? Theme.medicalBlue : Theme.subtleBorder,
+                            lineWidth: selectedPlan == .annual ? 2 : 1
                         )
                 )
             }
 
-            // Monthly plan
             Button {
                 withAnimation(.spring(duration: 0.2)) { selectedPlan = .monthly }
             } label: {
@@ -195,14 +209,14 @@ struct PaywallView: View {
                 .background(
                     selectedPlan == .monthly
                         ? Theme.medicalBlue.opacity(0.08)
-                        : Color(.secondarySystemGroupedBackground)
+                        : Theme.surfaceMuted
                 )
                 .clipShape(.rect(cornerRadius: 14))
                 .overlay(
                     RoundedRectangle(cornerRadius: 14)
                         .strokeBorder(
-                            selectedPlan == .monthly ? Theme.medicalBlue : Color.clear,
-                            lineWidth: 2
+                            selectedPlan == .monthly ? Theme.medicalBlue : Theme.subtleBorder,
+                            lineWidth: selectedPlan == .monthly ? 2 : 1
                         )
                 )
             }

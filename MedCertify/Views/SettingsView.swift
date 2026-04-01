@@ -131,7 +131,7 @@ struct SettingsView: View {
                                 .padding(.horizontal, 8)
                                 .padding(.vertical, 4)
                                 .background(Theme.statusGreen.opacity(0.12))
-                                .clipShape(Capsule())
+                                .clipShape(.capsule)
                         }
                         .padding(.vertical, 4)
 
@@ -243,7 +243,7 @@ struct SettingsView: View {
                 showDeleteConfirmation = true
             } label: {
                 Label("Delete All Data", systemImage: "trash.fill")
-                    .foregroundStyle(.red)
+                    .foregroundStyle(Theme.statusRed)
             }
         }
     }

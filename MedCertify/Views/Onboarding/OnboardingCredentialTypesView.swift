@@ -4,63 +4,67 @@ struct OnboardingCredentialTypesView: View {
     let viewModel: OnboardingViewModel
 
     var body: some View {
-        VStack(spacing: 0) {
-            VStack(spacing: 8) {
-                Text("What do you need to track?")
-                    .font(.title.bold())
-                Text("We've pre-selected the most common for your profession.")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-            }
-            .padding(.top, 40)
-            .padding(.horizontal, 24)
+        ZStack {
+            MedCertifyHeroBackground()
 
-            ScrollView {
-                VStack(spacing: 10) {
-                    ForEach(Constants.credentialTypes, id: \.name) { credType in
-                        CredentialTypeRow(
-                            name: credType.name,
-                            icon: credType.icon,
-                            isSelected: viewModel.selectedCredentialTypes.contains(credType.name)
-                        ) {
-                            withAnimation(.spring(duration: 0.2)) {
-                                if viewModel.selectedCredentialTypes.contains(credType.name) {
-                                    viewModel.selectedCredentialTypes.remove(credType.name)
-                                } else {
-                                    viewModel.selectedCredentialTypes.insert(credType.name)
+            VStack(spacing: 0) {
+                VStack(spacing: 8) {
+                    Text("What do you need to track?")
+                        .font(.title.bold())
+                    Text("We've pre-selected the most common for your profession.")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                }
+                .padding(.top, 40)
+                .padding(.horizontal, 24)
+
+                ScrollView {
+                    VStack(spacing: 10) {
+                        ForEach(Constants.credentialTypes, id: \.name) { credType in
+                            CredentialTypeRow(
+                                name: credType.name,
+                                icon: credType.icon,
+                                isSelected: viewModel.selectedCredentialTypes.contains(credType.name)
+                            ) {
+                                withAnimation(.spring(duration: 0.2)) {
+                                    if viewModel.selectedCredentialTypes.contains(credType.name) {
+                                        viewModel.selectedCredentialTypes.remove(credType.name)
+                                    } else {
+                                        viewModel.selectedCredentialTypes.insert(credType.name)
+                                    }
                                 }
                             }
                         }
                     }
+                    .padding(.horizontal, 24)
+                    .padding(.top, 24)
+                    .padding(.bottom, 100)
+                }
+
+                VStack(spacing: 8) {
+                    if !viewModel.selectedCredentialTypes.isEmpty {
+                        Text("\(viewModel.selectedCredentialTypes.count) credentials — MedCertify will track all of these")
+                            .font(.footnote.weight(.medium))
+                            .foregroundStyle(Theme.medicalBlue)
+                    }
+
+                    Button {
+                        viewModel.nextPage()
+                    } label: {
+                        Text("Next")
+                            .font(.headline)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 16)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(Theme.medicalBlue)
+                    .disabled(viewModel.selectedCredentialTypes.isEmpty)
                 }
                 .padding(.horizontal, 24)
-                .padding(.top, 24)
-                .padding(.bottom, 100)
+                .padding(.bottom, 16)
+                .background(.bar)
             }
-
-            VStack(spacing: 8) {
-                if !viewModel.selectedCredentialTypes.isEmpty {
-                    Text("\(viewModel.selectedCredentialTypes.count) credentials — MedCertify will track all of these")
-                        .font(.footnote.weight(.medium))
-                        .foregroundStyle(Theme.medicalBlue)
-                }
-
-                Button {
-                    viewModel.nextPage()
-                } label: {
-                    Text("Next")
-                        .font(.headline)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 16)
-                }
-                .buttonStyle(.borderedProminent)
-                .tint(Theme.medicalBlue)
-                .disabled(viewModel.selectedCredentialTypes.isEmpty)
-            }
-            .padding(.horizontal, 24)
-            .padding(.bottom, 16)
-            .background(.bar)
         }
     }
 }
@@ -91,8 +95,12 @@ struct CredentialTypeRow: View {
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 14)
-            .background(Color(.secondarySystemGroupedBackground))
+            .background(Theme.surfaceCard)
             .clipShape(.rect(cornerRadius: 12))
+            .overlay {
+                RoundedRectangle(cornerRadius: 12)
+                    .stroke(isSelected ? Theme.medicalBlue.opacity(0.2) : Theme.subtleBorder, lineWidth: 1)
+            }
         }
         .sensoryFeedback(.selection, trigger: isSelected)
     }

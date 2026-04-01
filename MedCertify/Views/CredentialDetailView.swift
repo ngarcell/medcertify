@@ -59,7 +59,7 @@ struct CredentialDetailView: View {
             Button("Confirm Renewal") {
                 viewModel.renewCredential(credential)
                 if subscriptionManager.isPro {
-                    Task { await NotificationManager.shared.scheduleRenewalReminders(for: credential) }
+                    NotificationManager.shared.scheduleRenewalReminders(for: credential)
                 }
             }
             Button("Cancel", role: .cancel) {}
@@ -442,7 +442,7 @@ struct EditCredentialView: View {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") {
                         try? modelContext.save()
-                        Task { await NotificationManager.shared.scheduleRenewalReminders(for: credential) }
+                        NotificationManager.shared.scheduleRenewalReminders(for: credential)
                         dismiss()
                     }
                     .fontWeight(.semibold)

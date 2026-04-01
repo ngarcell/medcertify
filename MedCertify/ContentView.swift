@@ -65,7 +65,7 @@ struct ContentView: View {
                     .foregroundStyle(Theme.medicalBlue)
                     .frame(width: 80, height: 80)
                     .background(Theme.medicalBlue.opacity(0.1))
-                    .clipShape(.circle)
+                    .clipShape(Circle())
             }
             .accessibilityLabel("Unlock with \(biometricTypeName)")
 
@@ -87,36 +87,44 @@ struct ContentView: View {
         var error: NSError?
 
         if context.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: &error) {
-            Task {
-                do {
-                    let success = try await context.evaluatePolicy(
-                        .deviceOwnerAuthenticationWithBiometrics,
-                        localizedReason: "Unlock MedCertify to access your credentials"
-                    )
-                    withAnimation {
-                        isUnlocked = success
-                        authenticationFailed = !success
+            context.evaluatePolicy(
+                .deviceOwnerAuthenticationWithBiometrics,
+                localizedReason: "Unlock MedCertify to access your credentials"
+            ) { success, _ in
+                DispatchQueue.main.async {
+                    if success {
+                        withAnimation {
+                            isUnlocked = true
+                            authenticationFailed = false
+                        }
+                    } else {
+                        withAnimation {
+                            authenticationFailed = true
+                        }
                     }
-                } catch {
-                    withAnimation { authenticationFailed = true }
                 }
             }
         } else if context.canEvaluatePolicy(.deviceOwnerAuthentication, error: &error) {
-            Task {
-                do {
-                    let success = try await context.evaluatePolicy(
-                        .deviceOwnerAuthentication,
-                        localizedReason: "Unlock MedCertify to access your credentials"
-                    )
-                    withAnimation {
-                        isUnlocked = success
-                        authenticationFailed = !success
+            // Fallback to passcode
+            context.evaluatePolicy(
+                .deviceOwnerAuthentication,
+                localizedReason: "Unlock MedCertify to access your credentials"
+            ) { success, _ in
+                DispatchQueue.main.async {
+                    if success {
+                        withAnimation {
+                            isUnlocked = true
+                            authenticationFailed = false
+                        }
+                    } else {
+                        withAnimation {
+                            authenticationFailed = true
+                        }
                     }
-                } catch {
-                    withAnimation { authenticationFailed = true }
                 }
             }
         } else {
+            // No authentication available — unlock directly
             isUnlocked = true
         }
     }

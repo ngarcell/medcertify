@@ -44,18 +44,46 @@ struct CMELogView: View {
     // MARK: - Pro-Only Overlay
 
     private var proOnlyOverlay: some View {
-        MedCertifyLockedFeatureView(
-            title: "CME Tracking",
-            message: "Log CME activities, track cycle progress, and manage your continuing education — all in one place.",
-            actionTitle: "Unlock CME Tracking",
-            features: [
-                (icon: "book.fill", text: "Log activities with credit type tracking"),
-                (icon: "chart.bar.fill", text: "Visual progress toward cycle goals"),
-                (icon: "bell.badge.fill", text: "Pace reminders if falling behind"),
-                (icon: "doc.text.fill", text: "Attach certificates to activities")
-            ],
-            action: { showPaywall = true }
-        )
+        VStack(spacing: 24) {
+            Spacer()
+
+            VStack(spacing: 16) {
+                Image(systemName: "lock.fill")
+                    .font(.system(size: 44))
+                    .foregroundStyle(Theme.credentialGold)
+
+                Text("CME Tracking")
+                    .font(.title2.bold())
+
+                Text("Log CME activities, track cycle progress,\nand manage your continuing education —\nall in one place.")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+            }
+
+            VStack(spacing: 12) {
+                FeatureRow(icon: "book.fill", text: "Log activities with credit type tracking")
+                FeatureRow(icon: "chart.bar.fill", text: "Visual progress toward cycle goals")
+                FeatureRow(icon: "bell.badge.fill", text: "Pace reminders if falling behind")
+                FeatureRow(icon: "doc.text.fill", text: "Attach certificates to activities")
+            }
+            .padding(.horizontal, 32)
+
+            Spacer()
+
+            Button {
+                showPaywall = true
+            } label: {
+                Label("Unlock CME Tracking", systemImage: "crown.fill")
+                    .font(.headline)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 16)
+            }
+            .buttonStyle(.borderedProminent)
+            .tint(Theme.medicalBlue)
+            .padding(.horizontal, 24)
+            .padding(.bottom, 16)
+        }
     }
 
     // MARK: - CME Content
@@ -240,7 +268,7 @@ struct CMEActivityRow: View {
                     .padding(.horizontal, 6)
                     .padding(.vertical, 2)
                     .background(Theme.medicalBlue.opacity(0.1))
-                    .clipShape(.capsule)
+                    .clipShape(Capsule())
                 if !activity.provider.isEmpty {
                     Text(activity.provider)
                         .font(.caption)
@@ -270,10 +298,27 @@ struct FilterChip: View {
                 .foregroundStyle(isSelected ? .white : .primary)
                 .padding(.horizontal, 14)
                 .padding(.vertical, 8)
-                .background(isSelected ? Theme.medicalBlue : Theme.surfaceMuted)
+                .background(isSelected ? Theme.medicalBlue : Color(.secondarySystemGroupedBackground))
                 .clipShape(Capsule())
         }
         .sensoryFeedback(.selection, trigger: isSelected)
     }
 }
 
+struct FeatureRow: View {
+    let icon: String
+    let text: String
+
+    var body: some View {
+        HStack(spacing: 14) {
+            Image(systemName: icon)
+                .font(.body)
+                .foregroundStyle(Theme.medicalBlue)
+                .frame(width: 28)
+            Text(text)
+                .font(.subheadline)
+                .foregroundStyle(.primary)
+            Spacer()
+        }
+    }
+}

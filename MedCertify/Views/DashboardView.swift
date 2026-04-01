@@ -38,7 +38,7 @@ struct DashboardView: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(alignment: .leading, spacing: Theme.sectionSpacing) {
+                VStack(alignment: .leading, spacing: 28) {
                     topIdentityBar
                     welcomeSection
 
@@ -52,11 +52,11 @@ struct DashboardView: View {
 
                     credentialsSection
                 }
-                .padding(.horizontal, Theme.screenPadding)
+                .padding(.horizontal, 24)
                 .padding(.top, 16)
                 .padding(.bottom, 120)
             }
-            .background(MedCertifyHeroBackground())
+            .background(Theme.surfaceBase)
             .toolbar(.hidden, for: .navigationBar)
             .safeAreaInset(edge: .bottom) {
                 addCredentialBar
@@ -241,7 +241,12 @@ struct DashboardView: View {
             }
         }
         .padding(22)
-        .medCertifySecondaryCard()
+        .background(Theme.surfaceRaised)
+        .clipShape(.rect(cornerRadius: 28))
+        .overlay {
+            RoundedRectangle(cornerRadius: 28)
+                .stroke(Theme.subtleBorder, lineWidth: 1)
+        }
     }
 
     private var credentialsSection: some View {
@@ -266,7 +271,8 @@ struct DashboardView: View {
                 }
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 30)
-                .medCertifyCard()
+                .background(Theme.surfaceCard)
+                .clipShape(.rect(cornerRadius: 24))
             } else {
                 ForEach(sortedCredentials.prefix(3)) { credential in
                     CredentialTimelineCard(credential: credential)
@@ -302,7 +308,10 @@ struct DashboardView: View {
     }
 
     private func sectionEyebrow(_ title: String) -> some View {
-        MedCertifySectionEyebrow(title: title)
+        Text(title.uppercased())
+            .font(.caption.weight(.medium))
+            .tracking(3.2)
+            .foregroundStyle(Theme.mutedLabel)
     }
 }
 
@@ -425,7 +434,9 @@ struct CredentialAlertCard: View {
             }
             .padding(20)
         }
-        .medCertifyCard()
+        .background(Theme.surfaceCard)
+        .clipShape(.rect(cornerRadius: 22))
+        .shadow(color: .black.opacity(0.05), radius: 16, y: 8)
         .accessibilityElement(children: .combine)
     }
 }
@@ -483,7 +494,9 @@ struct CredentialTimelineCard: View {
             }
         }
         .padding(20)
-        .medCertifyCard()
+        .background(Theme.surfaceCard)
+        .clipShape(.rect(cornerRadius: 22))
+        .shadow(color: .black.opacity(0.04), radius: 14, y: 8)
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(title), \(detailLine), \(trailingLabelTitle) \(dateLabel)")
     }

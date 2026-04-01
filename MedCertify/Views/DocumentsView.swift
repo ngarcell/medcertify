@@ -77,18 +77,46 @@ struct DocumentsView: View {
     // MARK: - Pro-Only Overlay
 
     private var proOnlyOverlay: some View {
-        MedCertifyLockedFeatureView(
-            title: "Document Vault",
-            message: "Store certificates, renewal confirmations, and important documents securely on your device.",
-            actionTitle: "Unlock Document Vault",
-            features: [
-                (icon: "camera.fill", text: "Scan documents with your camera"),
-                (icon: "photo.fill", text: "Import from photo library"),
-                (icon: "folder.fill", text: "Import PDFs and files"),
-                (icon: "shield.checkered", text: "Encrypted on-device storage")
-            ],
-            action: { showPaywall = true }
-        )
+        VStack(spacing: 24) {
+            Spacer()
+
+            VStack(spacing: 16) {
+                Image(systemName: "lock.fill")
+                    .font(.system(size: 44))
+                    .foregroundStyle(Theme.credentialGold)
+
+                Text("Document Vault")
+                    .font(.title2.bold())
+
+                Text("Store certificates, renewal confirmations,\nand important documents securely\non your device.")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+            }
+
+            VStack(spacing: 12) {
+                FeatureRow(icon: "camera.fill", text: "Scan documents with your camera")
+                FeatureRow(icon: "photo.fill", text: "Import from photo library")
+                FeatureRow(icon: "folder.fill", text: "Import PDFs and files")
+                FeatureRow(icon: "shield.checkered", text: "Encrypted on-device storage")
+            }
+            .padding(.horizontal, 32)
+
+            Spacer()
+
+            Button {
+                showPaywall = true
+            } label: {
+                Label("Unlock Document Vault", systemImage: "crown.fill")
+                    .font(.headline)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 16)
+            }
+            .buttonStyle(.borderedProminent)
+            .tint(Theme.medicalBlue)
+            .padding(.horizontal, 24)
+            .padding(.bottom, 16)
+        }
     }
 
     // MARK: - Document Content
@@ -224,7 +252,7 @@ struct DocumentRow: View {
                         .padding(.horizontal, 6)
                         .padding(.vertical, 2)
                         .background(Theme.medicalBlue.opacity(0.1))
-                        .clipShape(.capsule)
+                        .clipShape(Capsule())
 
                     if let size = document.fileData?.count {
                         Text(ByteCountFormatter.string(fromByteCount: Int64(size), countStyle: .file))

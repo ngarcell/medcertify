@@ -8,7 +8,7 @@ struct OnboardingContainerView: View {
 
     var body: some View {
         ZStack {
-            MedCertifyHeroBackground()
+            Color(.systemBackground).ignoresSafeArea()
 
             Group {
                 switch viewModel.currentPage {

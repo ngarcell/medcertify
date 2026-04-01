@@ -34,9 +34,6 @@ struct CredentialsListView: View {
                             HStack(spacing: 12) {
                                 Image(systemName: "lock.fill")
                                     .foregroundStyle(Theme.credentialGold)
-                                    .frame(width: 36, height: 36)
-                                    .background(Theme.credentialGold.opacity(0.12))
-                                    .clipShape(.rect(cornerRadius: Theme.smallCornerRadius))
                                 VStack(alignment: .leading, spacing: 2) {
                                     Text("Free Limit Reached")
                                         .font(.subheadline.weight(.semibold))
@@ -47,10 +44,9 @@ struct CredentialsListView: View {
                                 }
                                 Spacer()
                                 Image(systemName: "chevron.right")
-                                    .font(.caption.weight(.semibold))
+                                    .font(.caption)
                                     .foregroundStyle(.secondary)
                             }
-                            .padding(.vertical, 4)
                         }
                     }
                     .listRowBackground(Theme.credentialGold.opacity(0.08))
@@ -128,7 +124,7 @@ struct CredentialRow: View {
                 .foregroundStyle(Theme.statusColor(for: credential.status))
                 .frame(width: 36, height: 36)
                 .background(Theme.statusColor(for: credential.status).opacity(0.12))
-                .clipShape(.rect(cornerRadius: Theme.smallCornerRadius))
+                .clipShape(.rect(cornerRadius: 8))
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(credential.name.isEmpty ? credential.credentialType.rawValue : credential.name)

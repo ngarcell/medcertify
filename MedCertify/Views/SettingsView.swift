@@ -131,7 +131,7 @@ struct SettingsView: View {
                                 .padding(.horizontal, 8)
                                 .padding(.vertical, 4)
                                 .background(Theme.statusGreen.opacity(0.12))
-                                .clipShape(.capsule)
+                                .clipShape(Capsule())
                         }
                         .padding(.vertical, 4)
 
@@ -211,7 +211,7 @@ struct SettingsView: View {
                 if enabled {
                     Task {
                         _ = await NotificationManager.shared.requestAuthorization()
-                        await NotificationManager.shared.refreshAllReminders(for: credentials)
+                        NotificationManager.shared.refreshAllReminders(for: credentials)
                     }
                 }
             }
@@ -243,7 +243,7 @@ struct SettingsView: View {
                 showDeleteConfirmation = true
             } label: {
                 Label("Delete All Data", systemImage: "trash.fill")
-                    .foregroundStyle(Theme.statusRed)
+                    .foregroundStyle(.red)
             }
         }
     }

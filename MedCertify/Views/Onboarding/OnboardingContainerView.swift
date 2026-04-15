@@ -8,7 +8,7 @@ struct OnboardingContainerView: View {
 
     var body: some View {
         ZStack {
-            Color(.systemBackground).ignoresSafeArea()
+            Theme.canvasGradient.ignoresSafeArea()
 
             Group {
                 switch viewModel.currentPage {
@@ -16,14 +16,16 @@ struct OnboardingContainerView: View {
                 case 1: OnboardingProfessionView(viewModel: viewModel)
                 case 2: OnboardingStatesView(viewModel: viewModel)
                 case 3: OnboardingCredentialTypesView(viewModel: viewModel)
-                case 4: OnboardingNotificationsView(viewModel: viewModel)
+                case 4: OnboardingTrackingMethodView(viewModel: viewModel)
                 case 5:
+                    OnboardingNotificationsView(viewModel: viewModel)
+                case 6:
                     if SubscriptionManager.subscriptionsOfferedInApp {
                         OnboardingTrialReminderView(viewModel: viewModel)
                     } else {
                         OnboardingFreeReleaseReminderView(viewModel: viewModel)
                     }
-                case 6:
+                case 7:
                     if SubscriptionManager.subscriptionsOfferedInApp {
                         PaywallView(
                             onDismiss: { completeOnboarding(isPro: false) },

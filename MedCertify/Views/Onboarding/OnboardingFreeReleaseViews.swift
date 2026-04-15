@@ -6,33 +6,15 @@ struct OnboardingFreeReleaseReminderView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            Spacer()
-
-            VStack(spacing: 28) {
-                ZStack {
-                    Circle()
-                        .fill(Theme.medicalBlue.opacity(0.1))
-                        .frame(width: 100, height: 100)
-                    Image(systemName: "bell.badge.fill")
-                        .font(.system(size: 44))
-                        .foregroundStyle(Theme.medicalBlue)
-                }
-
-                VStack(spacing: 8) {
-                    Text("Stay ahead of renewals")
-                        .font(.title2.bold())
-                        .multilineTextAlignment(.center)
-
-                    Text("Turn on notifications so we can remind you before credentials expire.")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                        .multilineTextAlignment(.center)
-                }
-            }
+            onboardingHeader(
+                step: 6,
+                title: "You’re almost ready.",
+                subtitle: "The free release keeps the same professional structure: deadlines, proof, and reminders in one desk."
+            )
 
             VStack(alignment: .leading, spacing: 8) {
                 BulletPoint(text: "Renewal reminders on your schedule")
-                BulletPoint(text: "CME and document tools included")
+                BulletPoint(text: "Education and vault tools included")
                 BulletPoint(text: "Your data stays on this device")
             }
             .padding(.horizontal, 32)
@@ -40,18 +22,7 @@ struct OnboardingFreeReleaseReminderView: View {
 
             Spacer()
 
-            Button {
-                viewModel.nextPage()
-            } label: {
-                Text("Continue")
-                    .font(.headline)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 16)
-            }
-            .buttonStyle(.borderedProminent)
-            .tint(Theme.medicalBlue)
-            .padding(.horizontal, 24)
-            .padding(.bottom, 16)
+            onboardingFooterButton(title: "Continue", action: viewModel.nextPage)
         }
     }
 }
@@ -65,42 +36,34 @@ struct OnboardingFreeReleaseFinishView: View {
             Spacer()
 
             VStack(spacing: 24) {
-                ZStack {
-                    Circle()
-                        .fill(Theme.medicalBlue.opacity(0.1))
-                        .frame(width: 100, height: 100)
-                    Image(systemName: "checkmark.shield.fill")
-                        .font(.system(size: 48))
-                        .foregroundStyle(Theme.medicalBlue)
-                }
-
                 VStack(spacing: 8) {
-                    Text("You're all set")
-                        .font(.title2.bold())
+                    Text("Your desk is ready.")
+                        .font(Theme.display(32, relativeTo: .title, prominent: true))
                         .multilineTextAlignment(.center)
 
-                    Text("Start tracking credentials, CME, and documents.")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
+                    Text("Start tracking credentials, continuing education, and proof with a cleaner system than the one you started with.")
+                        .font(Theme.ui(16))
+                        .foregroundStyle(Theme.mutedLabel)
                         .multilineTextAlignment(.center)
                 }
             }
-            .padding(.horizontal, 24)
+            .padding(.horizontal, Theme.screenPadding)
 
             Spacer()
 
             Button {
                 onFinish()
             } label: {
-                Text("Get started")
-                    .font(.headline)
+                Text("Open MedCertify")
+                    .font(Theme.ui(17, weight: .semibold))
+                    .foregroundStyle(.white)
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, 16)
+                    .padding(.vertical, 18)
+                    .background(Theme.primaryGradient, in: RoundedRectangle(cornerRadius: 20))
             }
-            .buttonStyle(.borderedProminent)
-            .tint(Theme.medicalBlue)
-            .padding(.horizontal, 24)
-            .padding(.bottom, 16)
+            .buttonStyle(.plain)
+            .padding(.horizontal, Theme.screenPadding)
+            .padding(.bottom, 18)
         }
     }
 }

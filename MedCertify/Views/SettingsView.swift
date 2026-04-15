@@ -32,7 +32,9 @@ struct SettingsView: View {
             disclaimerSection
         }
         .listStyle(.insetGrouped)
-        .navigationTitle("Settings")
+        .scrollContentBackground(.hidden)
+        .background(Theme.canvasGradient)
+        .navigationTitle("Account")
         .sheet(isPresented: $showPaywall) {
             PaywallView(
                 onDismiss: { showPaywall = false },
@@ -59,33 +61,47 @@ struct SettingsView: View {
     private var profileSection: some View {
         Section("Profile") {
             if let profile = profile {
-                HStack(spacing: 14) {
-                    Image(systemName: "person.crop.circle.fill")
-                        .font(.system(size: 36))
-                        .foregroundStyle(Theme.medicalBlue)
+                VStack(alignment: .leading, spacing: 12) {
+                    HStack(spacing: 14) {
+                        Text(profile.initials)
+                            .font(Theme.ui(15, weight: .bold))
+                            .foregroundStyle(.white)
+                            .frame(width: 42, height: 42)
+                            .background(Theme.primaryGradient, in: Circle())
 
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(profile.profession.isEmpty ? "Healthcare Professional" : profile.profession)
-                            .font(.body.weight(.medium))
-                        Text("Licensed in \(profile.selectedStates.count) state\(profile.selectedStates.count == 1 ? "" : "s")")
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(profile.trimmedName.isEmpty ? profile.professionFriendlyName : profile.trimmedName)
+                                .font(.body.weight(.medium))
+                            Text(profile.professionFriendlyName)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+
+                    HStack {
+                        Text(profile.licensedStateSummary)
                             .font(.caption)
                             .foregroundStyle(.secondary)
+                        Spacer()
+                        Text(profile.workflowSourceLabel)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.trailing)
                     }
-                }
-                .padding(.vertical, 4)
 
-                HStack {
-                    Text("Credentials tracked")
-                        .font(.subheadline)
-                    Spacer()
-                    if subscriptionManager.isPro {
-                        Text("\(credentials.count)")
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(Theme.medicalBlue)
-                    } else {
-                        Text("\(credentials.count) / \(Constants.maxFreeCredentials)")
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(credentials.count >= Constants.maxFreeCredentials ? Theme.statusAmber : Theme.medicalBlue)
+                    HStack {
+                        Text("Credentials tracked")
+                            .font(.subheadline)
+                        Spacer()
+                        if subscriptionManager.isPro {
+                            Text("\(credentials.count)")
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(Theme.medicalBlue)
+                        } else {
+                            Text("\(credentials.count) / \(Constants.maxFreeCredentials)")
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(credentials.count >= Constants.maxFreeCredentials ? Theme.statusAmber : Theme.medicalBlue)
+                        }
                     }
                 }
             }
@@ -150,10 +166,10 @@ struct SettingsView: View {
                                 Image(systemName: "crown.fill")
                                     .foregroundStyle(Theme.credentialGold)
                                 VStack(alignment: .leading, spacing: 2) {
-                                    Text("Upgrade to Pro")
+                                    Text("Unlock the premium desk")
                                         .font(.body.weight(.semibold))
                                         .foregroundStyle(.primary)
-                                    Text("Unlimited credentials, reminders, CME tracking")
+                                    Text("Unlimited credentials, vault access, and education tracking")
                                         .font(.caption)
                                         .foregroundStyle(.secondary)
                                 }
@@ -302,7 +318,7 @@ struct SettingsView: View {
                 Text("Important Disclosure")
                     .font(.caption.weight(.bold))
                     .foregroundStyle(.secondary)
-                Text("MedCertify is a personal organization tool. It is not an official credential verification system and does not guarantee compliance. Always verify directly with licensing boards and accrediting bodies. This app does not collect or store patient health data.")
+                Text("MedCertify is a personal organization tool. It is not an official credential verification system and does not guarantee compliance. Always verify directly with licensing boards and accrediting bodies. The app is designed for professional readiness and does not store patient health data.")
                     .font(.caption2)
                     .foregroundStyle(.secondary)
             }

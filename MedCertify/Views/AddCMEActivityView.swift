@@ -1,7 +1,9 @@
 import SwiftUI
+import SwiftData
 
 struct AddCMEActivityView: View {
     @Environment(\.dismiss) private var dismiss
+    @Query private var profiles: [UserProfile]
     let viewModel: CMEViewModel
 
     @State private var activityTitle: String = ""
@@ -10,6 +12,10 @@ struct AddCMEActivityView: View {
     @State private var hours: String = ""
     @State private var dateCompleted: Date = Date()
     @State private var notes: String = ""
+
+    private var titleText: String {
+        profiles.first?.educationActivityTitle ?? "Log CME Activity"
+    }
 
     var body: some View {
         NavigationStack {
@@ -56,7 +62,7 @@ struct AddCMEActivityView: View {
                         .frame(minHeight: 80)
                 }
             }
-            .navigationTitle("Log CME Activity")
+            .navigationTitle(titleText)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {

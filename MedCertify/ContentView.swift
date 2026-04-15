@@ -43,16 +43,21 @@ struct ContentView: View {
             Spacer()
 
             VStack(spacing: 16) {
-                Image(systemName: "shield.checkered")
-                    .font(.system(size: 56))
-                    .foregroundStyle(Theme.medicalBlue)
+                Text("MedCertify")
+                    .font(Theme.ui(13, weight: .semibold))
+                    .tracking(2.4)
+                    .foregroundStyle(Theme.copper)
 
-                Text(Constants.appName)
-                    .font(.largeTitle.bold())
+                Text("Your credential desk is locked.")
+                    .font(Theme.display(34, relativeTo: .largeTitle, prominent: true))
+                    .foregroundStyle(Theme.headerText)
+                    .multilineTextAlignment(.center)
 
-                Text("Tap to unlock")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                Text("Authenticate to review renewals, proof, and upcoming deadlines.")
+                    .font(Theme.ui(16))
+                    .foregroundStyle(Theme.mutedLabel)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 32)
             }
 
             Spacer()
@@ -62,9 +67,9 @@ struct ContentView: View {
             } label: {
                 Image(systemName: biometricIconName)
                     .font(.system(size: 44))
-                    .foregroundStyle(Theme.medicalBlue)
+                    .foregroundStyle(.white)
                     .frame(width: 80, height: 80)
-                    .background(Theme.medicalBlue.opacity(0.1))
+                    .background(Theme.primaryGradient)
                     .clipShape(Circle())
             }
             .accessibilityLabel("Unlock with \(biometricTypeName)")
@@ -78,6 +83,8 @@ struct ContentView: View {
 
             Spacer()
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Theme.canvasGradient.ignoresSafeArea())
     }
 
     // MARK: - Authentication

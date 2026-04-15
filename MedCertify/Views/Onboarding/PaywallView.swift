@@ -36,6 +36,7 @@ struct PaywallView: View {
                 dismissButton
             }
         }
+        .background(Theme.canvasGradient)
         .scrollIndicators(.hidden)
         .refreshable {
             isLoadingProducts = true
@@ -81,20 +82,26 @@ struct PaywallView: View {
     // MARK: - Header
 
     private var headerSection: some View {
-        VStack(spacing: 16) {
-            Image(systemName: "shield.checkered")
-                .font(.system(size: 44))
-                .foregroundStyle(Theme.medicalBlue)
+        VStack(alignment: .leading, spacing: 16) {
+            Text("MedCertify Pro")
+                .font(Theme.ui(13, weight: .semibold))
+                .tracking(2.2)
+                .foregroundStyle(Theme.copper)
                 .padding(.top, 20)
 
-            Text("Protect your career")
-                .font(.title.bold())
+            Text("Keep the full credential desk in reach.")
+                .font(Theme.display(34, relativeTo: .largeTitle, prominent: true))
+                .foregroundStyle(Theme.headerText)
 
-            Text("A license lapse costs $5,000–$50,000+ in lost income.\nMedCertify costs less than one patient visit.")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 8)
+            Text("Unlock unlimited tracking, secure proof storage, and continuing education progress in one calmer workflow.")
+                .font(Theme.ui(16))
+                .foregroundStyle(Theme.mutedLabel)
+
+            VStack(spacing: 10) {
+                paywallFeature("Unlimited credentials and renewal timelines")
+                paywallFeature("Vault access for scanned proof and imported files")
+                paywallFeature("Education logging with cycle progress")
+            }
         }
         .padding(.horizontal, 24)
     }
@@ -149,14 +156,14 @@ struct PaywallView: View {
                 .padding(16)
                 .background(
                     selectedPlan == .annual
-                        ? Theme.medicalBlue.opacity(0.08)
-                        : Color(.secondarySystemGroupedBackground)
+                        ? Theme.inkAccent.opacity(0.08)
+                        : Theme.surfaceCard
                 )
                 .clipShape(.rect(cornerRadius: 14))
                 .overlay(
                     RoundedRectangle(cornerRadius: 14)
                         .strokeBorder(
-                            selectedPlan == .annual ? Theme.medicalBlue : Color.clear,
+                            selectedPlan == .annual ? Theme.inkAccent : Theme.subtleBorder,
                             lineWidth: 2
                         )
                 )
@@ -194,14 +201,14 @@ struct PaywallView: View {
                 .padding(16)
                 .background(
                     selectedPlan == .monthly
-                        ? Theme.medicalBlue.opacity(0.08)
-                        : Color(.secondarySystemGroupedBackground)
+                        ? Theme.inkAccent.opacity(0.08)
+                        : Theme.surfaceCard
                 )
                 .clipShape(.rect(cornerRadius: 14))
                 .overlay(
                     RoundedRectangle(cornerRadius: 14)
                         .strokeBorder(
-                            selectedPlan == .monthly ? Theme.medicalBlue : Color.clear,
+                            selectedPlan == .monthly ? Theme.inkAccent : Theme.subtleBorder,
                             lineWidth: 2
                         )
                 )
@@ -233,7 +240,7 @@ struct PaywallView: View {
                 .padding(.vertical, 16)
         }
         .buttonStyle(.borderedProminent)
-        .tint(Theme.medicalBlue)
+        .tint(Theme.inkAccent)
         .disabled(isLoading || isLoadingProducts || !selectedProductReady)
         .padding(.horizontal, 24)
         .padding(.top, 24)
@@ -245,7 +252,7 @@ struct PaywallView: View {
     @ViewBuilder
     private var trialDisclaimer: some View {
         if selectedPlan == .annual {
-            Text("Your free trial starts today. You'll be charged \(subscriptionManager.annualProduct?.displayPrice ?? "$49.99") on \(trialEndDate) unless you cancel. Cancel anytime in Settings.")
+            Text("Your free trial starts today. You’ll be charged \(subscriptionManager.annualProduct?.displayPrice ?? "$49.99") on \(trialEndDate) unless you cancel in system Settings.")
                 .font(.caption2)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
@@ -290,6 +297,18 @@ struct PaywallView: View {
         }
         .padding(.top, 12)
         .padding(.bottom, 32)
+    }
+
+    private func paywallFeature(_ text: String) -> some View {
+        HStack(alignment: .top, spacing: 8) {
+            Image(systemName: "checkmark")
+                .font(.caption.weight(.bold))
+                .foregroundStyle(Theme.statusGreen)
+                .padding(.top, 3)
+            Text(text)
+                .font(Theme.ui(14))
+                .foregroundStyle(Theme.mutedLabel)
+        }
     }
 
     // MARK: - Actions

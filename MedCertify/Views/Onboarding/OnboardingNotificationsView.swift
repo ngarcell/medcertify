@@ -6,45 +6,34 @@ struct OnboardingNotificationsView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            Spacer()
-
-            VStack(spacing: 24) {
-                Image(systemName: "bell.badge.fill")
-                    .font(.system(size: 56))
-                    .foregroundStyle(Theme.credentialGold)
-
-                VStack(spacing: 8) {
-                    Text("Never miss a\nrenewal deadline")
-                        .font(.title.bold())
-                        .multilineTextAlignment(.center)
-                    Text("We'll remind you months in advance — not days.")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                }
-            }
+            onboardingHeader(
+                step: 5,
+                title: "Keep the calm even when a deadline is coming.",
+                subtitle: "Turn on reminders so MedCertify can surface renewals early enough to act."
+            )
 
             VStack(spacing: 12) {
                 NotificationPreview(
-                    icon: "doc.text.fill",
+                    icon: "cross.case",
                     title: "License Renewal",
-                    message: "Texas medical license renews in 90 days — start your CME review",
+                    message: "Texas license renews in 90 days. Proof and checklist are ready to review.",
                     time: "9:00 AM"
                 )
                 NotificationPreview(
-                    icon: "book.fill",
-                    title: "CME Progress",
-                    message: "You need 12 more CME hours before Dec 31",
+                    icon: "calendar.badge.clock",
+                    title: "Credential Desk",
+                    message: "Two items need attention this month. Open MedCertify to review the next deadline.",
                     time: "Mon"
                 )
                 NotificationPreview(
-                    icon: "checkmark.circle.fill",
-                    title: "Renewed",
-                    message: "DEA registration renewed — logged to your vault",
+                    icon: "doc.richtext",
+                    title: "Proof Stored",
+                    message: "Renewal confirmation scanned and ready in your vault.",
                     time: "Yesterday"
                 )
             }
-            .padding(.horizontal, 24)
-            .padding(.top, 32)
+            .padding(.horizontal, Theme.screenPadding)
+            .padding(.top, 28)
 
             Spacer()
 
@@ -53,23 +42,24 @@ struct OnboardingNotificationsView: View {
                     requestNotifications()
                 } label: {
                     Text("Enable Reminders")
-                        .font(.headline)
+                        .font(Theme.ui(17, weight: .semibold))
+                        .foregroundStyle(.white)
                         .frame(maxWidth: .infinity)
-                        .padding(.vertical, 16)
+                        .padding(.vertical, 18)
+                        .background(Theme.primaryGradient, in: RoundedRectangle(cornerRadius: 20))
                 }
-                .buttonStyle(.borderedProminent)
-                .tint(Theme.medicalBlue)
+                .buttonStyle(.plain)
 
                 Button {
                     viewModel.nextPage()
                 } label: {
                     Text("Not now")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
+                        .font(Theme.ui(15, weight: .medium))
+                        .foregroundStyle(Theme.mutedLabel)
                 }
             }
-            .padding(.horizontal, 24)
-            .padding(.bottom, 16)
+            .padding(.horizontal, Theme.screenPadding)
+            .padding(.bottom, 18)
         }
     }
 
@@ -93,28 +83,32 @@ struct NotificationPreview: View {
         HStack(spacing: 12) {
             Image(systemName: icon)
                 .font(.title3)
-                .foregroundStyle(Theme.medicalBlue)
+                .foregroundStyle(Theme.inkAccent)
                 .frame(width: 36, height: 36)
-                .background(Theme.medicalBlue.opacity(0.1))
+                .background(Theme.inkAccent.opacity(0.1))
                 .clipShape(.rect(cornerRadius: 8))
 
             VStack(alignment: .leading, spacing: 2) {
                 HStack {
                     Text(title)
-                        .font(.footnote.weight(.semibold))
+                        .font(Theme.ui(13, weight: .semibold))
                     Spacer()
                     Text(time)
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
+                        .font(Theme.ui(11))
+                        .foregroundStyle(Theme.mutedLabel)
                 }
                 Text(message)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .font(Theme.ui(13))
+                    .foregroundStyle(Theme.mutedLabel)
                     .lineLimit(2)
             }
         }
         .padding(12)
-        .background(Color(.secondarySystemGroupedBackground))
-        .clipShape(.rect(cornerRadius: 14))
+        .background(Theme.surfaceCard)
+        .clipShape(.rect(cornerRadius: Theme.radiusMedium))
+        .overlay {
+            RoundedRectangle(cornerRadius: Theme.radiusMedium)
+                .stroke(Theme.subtleBorder, lineWidth: 1)
+        }
     }
 }

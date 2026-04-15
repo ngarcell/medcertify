@@ -5,62 +5,38 @@ struct OnboardingTrialReminderView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            Spacer()
-
-            VStack(spacing: 28) {
-                ZStack {
-                    Circle()
-                        .fill(Theme.medicalBlue.opacity(0.1))
-                        .frame(width: 100, height: 100)
-                    Image(systemName: "calendar.badge.checkmark")
-                        .font(.system(size: 44))
-                        .foregroundStyle(Theme.medicalBlue)
-                }
-
-                VStack(spacing: 8) {
-                    Text("We'll remind you before\nyour free trial ends")
-                        .font(.title2.bold())
-                        .multilineTextAlignment(.center)
-
-                    Text("No surprises. Full transparency.")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                }
-            }
+            onboardingHeader(
+                step: 6,
+                title: "Trial reminders stay transparent.",
+                subtitle: "If you start a trial, MedCertify will warn you before it ends. No surprise billing copy, no pressure."
+            )
 
             VStack(spacing: 16) {
                 TrialTimelineItem(day: "Today", description: "Full access starts", icon: "play.circle.fill", color: Theme.statusGreen)
-                TrialTimelineItem(day: "Day 6", description: "We'll send you a reminder", icon: "bell.fill", color: Theme.credentialGold)
-                TrialTimelineItem(day: "Day 7", description: "Trial ends — cancel anytime", icon: "clock.fill", color: Theme.statusBlue)
+                TrialTimelineItem(day: "Day 6", description: "MedCertify sends a heads-up reminder", icon: "bell.fill", color: Theme.copper)
+                TrialTimelineItem(day: "Day 7", description: "Trial ends — manage anytime in Settings", icon: "clock.fill", color: Theme.statusBlue)
             }
             .padding(20)
-            .background(Color(.secondarySystemGroupedBackground))
-            .clipShape(.rect(cornerRadius: 16))
-            .padding(.horizontal, 24)
-            .padding(.top, 32)
+            .background(Theme.surfaceCard)
+            .clipShape(.rect(cornerRadius: Theme.radiusLarge))
+            .overlay {
+                RoundedRectangle(cornerRadius: Theme.radiusLarge)
+                    .stroke(Theme.subtleBorder, lineWidth: 1)
+            }
+            .padding(.horizontal, Theme.screenPadding)
+            .padding(.top, 28)
 
             VStack(alignment: .leading, spacing: 8) {
-                BulletPoint(text: "Full access for 7 days — unlimited credentials")
-                BulletPoint(text: "Cancel anytime with one tap")
-                BulletPoint(text: "We'll notify you 24 hours before trial ends")
+                BulletPoint(text: "7 days of full access to the premium workflow")
+                BulletPoint(text: "Cancel anytime in system Settings")
+                BulletPoint(text: "Reminder scheduled before the billing date")
             }
             .padding(.horizontal, 32)
             .padding(.top, 24)
 
             Spacer()
 
-            Button {
-                viewModel.nextPage()
-            } label: {
-                Text("Continue")
-                    .font(.headline)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 16)
-            }
-            .buttonStyle(.borderedProminent)
-            .tint(Theme.medicalBlue)
-            .padding(.horizontal, 24)
-            .padding(.bottom, 16)
+            onboardingFooterButton(title: "Continue", action: viewModel.nextPage)
         }
     }
 }
@@ -78,10 +54,10 @@ struct TrialTimelineItem: View {
                 .frame(width: 24)
             VStack(alignment: .leading, spacing: 2) {
                 Text(day)
-                    .font(.subheadline.weight(.semibold))
+                    .font(Theme.ui(15, weight: .semibold))
                 Text(description)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .font(Theme.ui(13))
+                    .foregroundStyle(Theme.mutedLabel)
             }
             Spacer()
         }
@@ -98,8 +74,8 @@ struct BulletPoint: View {
                 .foregroundStyle(Theme.statusGreen)
                 .padding(.top, 2)
             Text(text)
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
+                .font(Theme.ui(14))
+                .foregroundStyle(Theme.mutedLabel)
         }
     }
 }

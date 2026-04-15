@@ -5,15 +5,32 @@ struct OnboardingProfessionView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            VStack(spacing: 8) {
-                Text("What's your profession?")
-                    .font(.title.bold())
-                Text("This helps us customize your credential tracker.")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
+            onboardingHeader(
+                step: 1,
+                title: "Who is this desk for?",
+                subtitle: "We’ll use your name and role to personalize the experience without changing the underlying data model."
+            )
+
+            VStack(alignment: .leading, spacing: 10) {
+                Text("First name")
+                    .font(Theme.ui(13, weight: .semibold))
+                    .foregroundStyle(Theme.mutedLabel)
+
+                TextField("Jordan", text: Binding(
+                    get: { viewModel.name },
+                    set: { viewModel.name = $0 }
+                ))
+                .textInputAutocapitalization(.words)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 15)
+                .background(Theme.surfaceCard, in: RoundedRectangle(cornerRadius: Theme.radiusMedium))
+                .overlay {
+                    RoundedRectangle(cornerRadius: Theme.radiusMedium)
+                        .stroke(Theme.subtleBorder, lineWidth: 1)
+                }
             }
-            .padding(.top, 40)
-            .padding(.horizontal, 24)
+            .padding(.horizontal, Theme.screenPadding)
+            .padding(.top, 20)
 
             ScrollView {
                 LazyVGrid(columns: [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)], spacing: 12) {
@@ -26,16 +43,20 @@ struct OnboardingProfessionView: View {
                             withAnimation(.spring(duration: 0.3)) {
                                 viewModel.profession = profession.name
                             }
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
-                                viewModel.selectedCredentialTypes = Set(Constants.defaultCredentialTypes(for: profession.name))
-                                viewModel.nextPage()
-                            }
+                            viewModel.selectedCredentialTypes = Set(Constants.defaultCredentialTypes(for: profession.name))
                         }
                     }
                 }
-                .padding(.horizontal, 24)
-                .padding(.top, 32)
+                .padding(.horizontal, Theme.screenPadding)
+                .padding(.top, 24)
+                .padding(.bottom, 120)
             }
+
+            onboardingFooterButton(
+                title: "Continue",
+                isDisabled: viewModel.profession.isEmpty || viewModel.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+                action: viewModel.nextPage
+            )
         }
     }
 }
@@ -51,23 +72,24 @@ struct ProfessionCard: View {
             VStack(spacing: 12) {
                 Image(systemName: icon)
                     .font(.system(size: 32))
-                    .foregroundStyle(isSelected ? .white : Theme.medicalBlue)
+                    .foregroundStyle(isSelected ? .white : Theme.inkAccent)
                 Text(name)
-                    .font(.subheadline.weight(.medium))
-                    .foregroundStyle(isSelected ? .white : .primary)
+                    .font(Theme.ui(14, weight: .semibold))
+                    .foregroundStyle(isSelected ? .white : Theme.bodyText)
                     .multilineTextAlignment(.center)
                     .lineLimit(2)
                     .minimumScaleFactor(0.8)
             }
             .frame(maxWidth: .infinity)
             .frame(height: 130)
-            .background(isSelected ? Theme.medicalBlue : Color(.secondarySystemGroupedBackground))
-            .clipShape(.rect(cornerRadius: 16))
-            .overlay(
-                RoundedRectangle(cornerRadius: 16)
-                    .strokeBorder(isSelected ? Theme.medicalBlue : Color.clear, lineWidth: 2)
-            )
+            .background(isSelected ? Theme.primaryGradient : LinearGradient(colors: [Theme.surfaceCard], startPoint: .topLeading, endPoint: .bottomTrailing))
+            .clipShape(.rect(cornerRadius: Theme.radiusMedium))
+            .overlay {
+                RoundedRectangle(cornerRadius: Theme.radiusMedium)
+                    .strokeBorder(isSelected ? Theme.inkAccent.opacity(0.2) : Theme.subtleBorder, lineWidth: 1)
+            }
         }
         .sensoryFeedback(.selection, trigger: isSelected)
+        .buttonStyle(.plain)
     }
 }

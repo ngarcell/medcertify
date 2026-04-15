@@ -5,16 +5,11 @@ struct OnboardingCredentialTypesView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            VStack(spacing: 8) {
-                Text("What do you need to track?")
-                    .font(.title.bold())
-                Text("We've pre-selected the most common for your profession.")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-            }
-            .padding(.top, 40)
-            .padding(.horizontal, 24)
+            onboardingHeader(
+                step: 3,
+                title: "What needs to stay renewal-ready?",
+                subtitle: "We preselected the usual set for \(viewModel.profession.isEmpty ? "your role" : viewModel.profession). Adjust anything you want."
+            )
 
             ScrollView {
                 VStack(spacing: 10) {
@@ -34,7 +29,7 @@ struct OnboardingCredentialTypesView: View {
                         }
                     }
                 }
-                .padding(.horizontal, 24)
+                .padding(.horizontal, Theme.screenPadding)
                 .padding(.top, 24)
                 .padding(.bottom, 100)
             }
@@ -42,25 +37,12 @@ struct OnboardingCredentialTypesView: View {
             VStack(spacing: 8) {
                 if !viewModel.selectedCredentialTypes.isEmpty {
                     Text("\(viewModel.selectedCredentialTypes.count) credentials — MedCertify will track all of these")
-                        .font(.footnote.weight(.medium))
-                        .foregroundStyle(Theme.medicalBlue)
+                        .font(Theme.ui(13, weight: .semibold))
+                        .foregroundStyle(Theme.copper)
                 }
 
-                Button {
-                    viewModel.nextPage()
-                } label: {
-                    Text("Next")
-                        .font(.headline)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 16)
-                }
-                .buttonStyle(.borderedProminent)
-                .tint(Theme.medicalBlue)
-                .disabled(viewModel.selectedCredentialTypes.isEmpty)
+                onboardingFooterButton(title: "Continue", isDisabled: viewModel.selectedCredentialTypes.isEmpty, action: viewModel.nextPage)
             }
-            .padding(.horizontal, 24)
-            .padding(.bottom, 16)
-            .background(.bar)
         }
     }
 }
@@ -76,24 +58,29 @@ struct CredentialTypeRow: View {
             HStack(spacing: 14) {
                 Image(systemName: icon)
                     .font(.title3)
-                    .foregroundStyle(isSelected ? Theme.medicalBlue : .secondary)
+                    .foregroundStyle(isSelected ? Theme.inkAccent : Theme.mutedLabel)
                     .frame(width: 32)
 
                 Text(name)
-                    .font(.body)
-                    .foregroundStyle(.primary)
+                    .font(Theme.ui(16, weight: .medium))
+                    .foregroundStyle(Theme.bodyText)
 
                 Spacer()
 
                 Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
                     .font(.title3)
-                    .foregroundStyle(isSelected ? Theme.medicalBlue : Color(.tertiaryLabel))
+                    .foregroundStyle(isSelected ? Theme.inkAccent : Theme.mutedLabel.opacity(0.6))
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 14)
-            .background(Color(.secondarySystemGroupedBackground))
-            .clipShape(.rect(cornerRadius: 12))
+            .background(Theme.surfaceCard)
+            .clipShape(.rect(cornerRadius: Theme.radiusMedium))
+            .overlay {
+                RoundedRectangle(cornerRadius: Theme.radiusMedium)
+                    .stroke(isSelected ? Theme.inkAccent.opacity(0.25) : Theme.subtleBorder, lineWidth: 1)
+            }
         }
         .sensoryFeedback(.selection, trigger: isSelected)
+        .buttonStyle(.plain)
     }
 }

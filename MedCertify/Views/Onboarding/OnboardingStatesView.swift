@@ -9,20 +9,16 @@ struct OnboardingStatesView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            VStack(spacing: 8) {
-                Text("Where are you licensed?")
-                    .font(.title.bold())
-                Text("Select all states where you hold a license.")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-            }
-            .padding(.top, 40)
-            .padding(.horizontal, 24)
+            onboardingHeader(
+                step: 2,
+                title: "Where are you licensed?",
+                subtitle: "We’ll use this to keep the app grounded in your real working footprint."
+            )
 
             if !viewModel.selectedStates.isEmpty {
                 Text("\(viewModel.selectedStates.count) state\(viewModel.selectedStates.count == 1 ? "" : "s") selected")
-                    .font(.footnote.weight(.medium))
-                    .foregroundStyle(Theme.medicalBlue)
+                    .font(Theme.ui(13, weight: .semibold))
+                    .foregroundStyle(Theme.copper)
                     .padding(.top, 12)
             }
 
@@ -43,27 +39,12 @@ struct OnboardingStatesView: View {
                         }
                     }
                 }
-                .padding(.horizontal, 24)
+                .padding(.horizontal, Theme.screenPadding)
                 .padding(.top, 20)
                 .padding(.bottom, 100)
             }
 
-            VStack {
-                Button {
-                    viewModel.nextPage()
-                } label: {
-                    Text("Next")
-                        .font(.headline)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 16)
-                }
-                .buttonStyle(.borderedProminent)
-                .tint(Theme.medicalBlue)
-                .disabled(viewModel.selectedStates.isEmpty)
-            }
-            .padding(.horizontal, 24)
-            .padding(.bottom, 16)
-            .background(.bar)
+            onboardingFooterButton(title: "Continue", isDisabled: viewModel.selectedStates.isEmpty, action: viewModel.nextPage)
         }
     }
 }
@@ -76,12 +57,17 @@ struct StateChip: View {
     var body: some View {
         Button(action: action) {
             Text(state)
-                .font(.footnote.weight(.semibold))
-                .foregroundStyle(isSelected ? .white : .primary)
+                .font(Theme.ui(13, weight: .semibold))
+                .foregroundStyle(isSelected ? .white : Theme.bodyText)
                 .frame(width: 52, height: 40)
-                .background(isSelected ? Theme.medicalBlue : Color(.secondarySystemGroupedBackground))
-                .clipShape(.rect(cornerRadius: 10))
+                .background(isSelected ? Theme.primaryGradient : LinearGradient(colors: [Theme.surfaceCard], startPoint: .topLeading, endPoint: .bottomTrailing))
+                .clipShape(.rect(cornerRadius: 12))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(isSelected ? Color.clear : Theme.subtleBorder, lineWidth: 1)
+                }
         }
         .sensoryFeedback(.selection, trigger: isSelected)
+        .buttonStyle(.plain)
     }
 }

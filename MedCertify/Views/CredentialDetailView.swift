@@ -22,8 +22,8 @@ struct CredentialDetailView: View {
             .padding(.horizontal)
             .padding(.bottom, 20)
         }
-        .background(Color(.systemGroupedBackground))
-        .navigationTitle(credential.name.isEmpty ? credential.credentialType.rawValue : credential.name)
+        .background(Theme.canvasGradient)
+        .navigationTitle(credential.displayName)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
@@ -125,7 +125,7 @@ struct CredentialDetailView: View {
             }
         }
         .padding(16)
-        .background(Color(.secondarySystemGroupedBackground))
+        .background(Theme.surfaceCard)
         .clipShape(.rect(cornerRadius: 16))
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(credential.credentialType.rawValue), \(credential.status.rawValue), \(credential.daysUntilExpiration.map { "\($0) days until expiration" } ?? "no expiration date")")
@@ -184,7 +184,7 @@ struct CredentialDetailView: View {
                 }
             }
         }
-        .background(Color(.secondarySystemGroupedBackground))
+        .background(Theme.surfaceCard)
         .clipShape(.rect(cornerRadius: 16))
     }
 
@@ -267,7 +267,7 @@ struct CredentialDetailView: View {
             }
         }
         .padding(.bottom, 8)
-        .background(Color(.secondarySystemGroupedBackground))
+        .background(Theme.surfaceCard)
         .clipShape(.rect(cornerRadius: 16))
     }
 
@@ -331,7 +331,7 @@ struct CredentialDetailView: View {
             }
         }
         .padding(.bottom, 8)
-        .background(Color(.secondarySystemGroupedBackground))
+        .background(Theme.surfaceCard)
         .clipShape(.rect(cornerRadius: 16))
     }
 }

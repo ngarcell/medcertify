@@ -22,6 +22,15 @@ enum Constants {
         ("Other Healthcare Professional", "heart.text.clipboard")
     ]
 
+    static let trackingMethods: [String] = [
+        "a spreadsheet",
+        "calendar reminders",
+        "email folders",
+        "a hospital or board portal",
+        "paper notes or a binder",
+        "memory and last-minute checks"
+    ]
+
     static let usStates: [String] = [
         "AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DE", "DC", "FL",
         "GA", "HI", "ID", "IL", "IN", "IA", "KS", "KY", "LA", "ME",

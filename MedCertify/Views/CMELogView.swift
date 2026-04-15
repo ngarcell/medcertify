@@ -6,10 +6,23 @@ struct CMELogView: View {
     @Environment(SubscriptionManager.self) private var subscriptionManager
     @Query(sort: \CMEActivity.dateCompleted, order: .reverse) private var activities: [CMEActivity]
     @Query private var cycles: [CMECycle]
+    @Query private var profiles: [UserProfile]
     @State private var showAddActivity: Bool = false
     @State private var showAddCycle: Bool = false
     @State private var showPaywall: Bool = false
     @State private var selectedFilter: CMECreditType?
+
+    private var profile: UserProfile? {
+        profiles.first
+    }
+
+    private var educationLabel: String {
+        profile?.educationTabTitle ?? "CME"
+    }
+
+    private var educationLongTitle: String {
+        profile?.educationLongTitle ?? "Continuing Medical Education"
+    }
 
     private var filteredActivities: [CMEActivity] {
         guard let filter = selectedFilter else { return activities }
@@ -18,14 +31,28 @@ struct CMELogView: View {
 
     var body: some View {
         NavigationStack {
-            ZStack {
+            Group {
                 if subscriptionManager.isPro {
-                    cmeContent
+                    activeContent
                 } else {
-                    proOnlyOverlay
+                    lockedContent
                 }
             }
-            .navigationTitle("CME Log")
+            .background(Theme.canvasGradient)
+            .navigationTitle(educationLabel)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                if subscriptionManager.isPro {
+                    ToolbarItem(placement: .primaryAction) {
+                        Button {
+                            showAddActivity = true
+                        } label: {
+                            Image(systemName: "plus")
+                                .foregroundStyle(Theme.inkAccent)
+                        }
+                    }
+                }
+            }
             .sheet(isPresented: $showAddActivity) {
                 AddCMEActivityView(viewModel: viewModel)
             }
@@ -41,284 +68,324 @@ struct CMELogView: View {
         }
     }
 
-    // MARK: - Pro-Only Overlay
+    private var lockedContent: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 22) {
+                Text(educationLongTitle)
+                    .font(Theme.display(34, relativeTo: .largeTitle, prominent: true))
+                    .foregroundStyle(Theme.headerText)
 
-    private var proOnlyOverlay: some View {
-        VStack(spacing: 24) {
-            Spacer()
+                Text("Keep hours, provider notes, and cycle pace in one place. Store proof in Vault so audits are less chaotic.")
+                    .font(Theme.ui(16))
+                    .foregroundStyle(Theme.mutedLabel)
 
-            VStack(spacing: 16) {
-                Image(systemName: "lock.fill")
-                    .font(.system(size: 44))
-                    .foregroundStyle(Theme.credentialGold)
+                VStack(spacing: 12) {
+                    lockedFeature(icon: "book.closed", title: "Clean activity logging", subtitle: "Record provider, date, type, and hours before they pile up.")
+                    lockedFeature(icon: "chart.line.uptrend.xyaxis", title: "Cycle pace visibility", subtitle: "See whether you are on pace or need to close the gap.")
+                    lockedFeature(icon: "folder", title: "Proof stays nearby", subtitle: "Keep documents in Vault instead of searching old inboxes.")
+                }
 
-                Text("CME Tracking")
-                    .font(.title2.bold())
-
-                Text("Log CME activities, track cycle progress,\nand manage your continuing education —\nall in one place.")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
+                Button {
+                    showPaywall = true
+                } label: {
+                    Text("Unlock \(educationLabel) tracking")
+                        .font(Theme.ui(17, weight: .semibold))
+                        .foregroundStyle(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 18)
+                        .background(Theme.primaryGradient, in: RoundedRectangle(cornerRadius: 20))
+                }
+                .buttonStyle(.plain)
             }
-
-            VStack(spacing: 12) {
-                FeatureRow(icon: "book.fill", text: "Log activities with credit type tracking")
-                FeatureRow(icon: "chart.bar.fill", text: "Visual progress toward cycle goals")
-                FeatureRow(icon: "bell.badge.fill", text: "Pace reminders if falling behind")
-                FeatureRow(icon: "doc.text.fill", text: "Attach certificates to activities")
-            }
-            .padding(.horizontal, 32)
-
-            Spacer()
-
-            Button {
-                showPaywall = true
-            } label: {
-                Label("Unlock CME Tracking", systemImage: "crown.fill")
-                    .font(.headline)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 16)
-            }
-            .buttonStyle(.borderedProminent)
-            .tint(Theme.medicalBlue)
-            .padding(.horizontal, 24)
-            .padding(.bottom, 16)
+            .padding(Theme.screenPadding)
         }
     }
 
-    // MARK: - CME Content
+    private var activeContent: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 22) {
+                Text(educationLongTitle)
+                    .font(Theme.display(34, relativeTo: .largeTitle, prominent: true))
+                    .foregroundStyle(Theme.headerText)
 
-    private var cmeContent: some View {
-        List {
-            if let cycle = cycles.first {
-                cycleProgressSection(cycle: cycle)
-            } else {
-                Section {
-                    Button {
-                        showAddCycle = true
-                    } label: {
-                        HStack {
-                            Image(systemName: "calendar.badge.plus")
-                                .foregroundStyle(Theme.medicalBlue)
-                            Text("Set Up CME Cycle")
-                                .foregroundStyle(Theme.medicalBlue)
+                Text("Record completed activities before they become year-end cleanup.")
+                    .font(Theme.ui(16))
+                    .foregroundStyle(Theme.mutedLabel)
+
+                if let cycle = cycles.first {
+                    cycleProgressSection(cycle: cycle)
+                } else {
+                    setupCycleCard
+                }
+
+                filterSection
+
+                if filteredActivities.isEmpty {
+                    emptyStateCard
+                } else {
+                    LazyVStack(spacing: 12) {
+                        ForEach(filteredActivities) { activity in
+                            CMEActivityCard(activity: activity)
+                                .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                                    Button(role: .destructive) {
+                                        viewModel.deleteActivity(activity)
+                                    } label: {
+                                        Label("Delete", systemImage: "trash")
+                                    }
+                                }
                         }
                     }
                 }
-            }
 
-            filterSection
-
-            Section("Activities") {
-                if filteredActivities.isEmpty {
-                    ContentUnavailableView {
-                        Label("No Activities", systemImage: "book")
-                    } description: {
-                        Text("Tap + to log your first CME activity.")
-                    }
-                    .listRowBackground(Color.clear)
-                } else {
-                    ForEach(filteredActivities) { activity in
-                        CMEActivityRow(activity: activity)
-                            .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                                Button(role: .destructive) {
-                                    viewModel.deleteActivity(activity)
-                                } label: {
-                                    Label("Delete", systemImage: "trash")
-                                }
-                            }
-                    }
+                if !activities.isEmpty {
+                    summarySection
                 }
             }
-
-            if !activities.isEmpty {
-                hoursSummarySection
-            }
-        }
-        .listStyle(.insetGrouped)
-        .toolbar {
-            ToolbarItem(placement: .primaryAction) {
-                Button {
-                    showAddActivity = true
-                } label: {
-                    Image(systemName: "plus")
-                }
-            }
+            .padding(.horizontal, Theme.screenPadding)
+            .padding(.top, 18)
+            .padding(.bottom, 40)
         }
     }
-
-    // MARK: - Cycle Progress
 
     private func cycleProgressSection(cycle: CMECycle) -> some View {
         let cycleActivities = viewModel.activitiesForCycle(activities, cycle: cycle)
         let totalHours = viewModel.totalHours(cycleActivities)
         let progress = min(totalHours / cycle.totalHoursRequired, 1.0)
 
-        return Section {
-            VStack(spacing: 12) {
-                HStack {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(cycle.name)
-                            .font(.headline)
-                        Text("Ending \(cycle.endDate.formatted(.dateTime.month(.wide).year()))")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                    Spacer()
-                    VStack(alignment: .trailing) {
-                        Text("\(totalHours, specifier: "%.1f")/\(cycle.totalHoursRequired, specifier: "%.0f")")
-                            .font(.title3.weight(.bold).monospacedDigit())
-                        Text("hours")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                }
+        return VStack(alignment: .leading, spacing: 16) {
+            Text(profile?.educationProgressTitle ?? "\(educationLabel) Progress")
+                .font(Theme.ui(13, weight: .semibold))
+                .tracking(1.4)
+                .foregroundStyle(Theme.copper)
 
-                GeometryReader { geo in
-                    ZStack(alignment: .leading) {
-                        Capsule()
-                            .fill(Color(.systemGray5))
-                            .frame(height: 12)
-                        Capsule()
-                            .fill(
-                                progress >= 1.0 ? Theme.statusGreen :
-                                progress >= 0.5 ? Theme.medicalBlue : Theme.statusAmber
-                            )
-                            .frame(width: geo.size.width * progress, height: 12)
-                    }
+            HStack(alignment: .bottom) {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(cycle.name.isEmpty ? "Current cycle" : cycle.name)
+                        .font(Theme.display(25, relativeTo: .title2, prominent: true))
+                        .foregroundStyle(Theme.headerText)
+                    Text("Ends \(cycle.endDate.formatted(.dateTime.month(.wide).day().year()))")
+                        .font(Theme.ui(14))
+                        .foregroundStyle(Theme.mutedLabel)
                 }
-                .frame(height: 12)
-                .accessibilityLabel("CME cycle progress: \(Int(progress * 100)) percent")
-
-                HStack {
-                    Text("\(cycle.daysRemaining) days remaining")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    Spacer()
-                    if cycle.daysRemaining > 0 {
-                        let monthsLeft = max(1, cycle.monthsRemaining)
-                        let hoursPerMonth = max(0, cycle.totalHoursRequired - totalHours) / Double(monthsLeft)
-                        Text("Pace: \(hoursPerMonth, specifier: "%.1f") hrs/month")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
+                Spacer()
+                VStack(alignment: .trailing, spacing: 4) {
+                    Text("\(Int(totalHours.rounded()))/\(Int(cycle.totalHoursRequired.rounded()))")
+                        .font(Theme.display(28, relativeTo: .title2, prominent: true))
+                        .foregroundStyle(Theme.headerText)
+                    Text("hours")
+                        .font(Theme.ui(12, weight: .medium))
+                        .foregroundStyle(Theme.mutedLabel)
                 }
             }
+
+            GeometryReader { geo in
+                ZStack(alignment: .leading) {
+                    Capsule()
+                        .fill(Theme.surfaceMuted)
+                        .frame(height: 12)
+                    Capsule()
+                        .fill(progress >= 1 ? Theme.statusGreen : Theme.inkAccent)
+                        .frame(width: max(18, geo.size.width * progress), height: 12)
+                }
+            }
+            .frame(height: 12)
+
+            HStack {
+                Text("\(cycle.daysRemaining) days remaining")
+                    .font(Theme.ui(13))
+                    .foregroundStyle(Theme.mutedLabel)
+                Spacer()
+                Text(progress >= 1 ? "On pace" : "Keep logging regularly")
+                    .font(Theme.ui(13, weight: .semibold))
+                    .foregroundStyle(progress >= 1 ? Theme.statusGreen : Theme.copper)
+            }
+        }
+        .padding(Theme.cardPadding)
+        .background(Theme.surfaceCard, in: RoundedRectangle(cornerRadius: Theme.radiusLarge))
+        .overlay {
+            RoundedRectangle(cornerRadius: Theme.radiusLarge)
+                .stroke(Theme.coolAccent.opacity(0.18), lineWidth: 1)
         }
     }
 
-    // MARK: - Filter
+    private var setupCycleCard: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Set up your current cycle")
+                .font(Theme.ui(17, weight: .semibold))
+                .foregroundStyle(Theme.bodyText)
+            Text("Add the date range and target hours so MedCertify can show whether you are on pace.")
+                .font(Theme.ui(14))
+                .foregroundStyle(Theme.mutedLabel)
+
+            Button("Create cycle") {
+                showAddCycle = true
+            }
+            .font(Theme.ui(15, weight: .semibold))
+            .foregroundStyle(Theme.inkAccent)
+        }
+        .padding(Theme.cardPadding)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Theme.surfaceCard, in: RoundedRectangle(cornerRadius: Theme.radiusMedium))
+        .overlay {
+            RoundedRectangle(cornerRadius: Theme.radiusMedium)
+                .stroke(Theme.subtleBorder, lineWidth: 1)
+        }
+    }
 
     private var filterSection: some View {
         ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 8) {
-                FilterChip(title: "All", isSelected: selectedFilter == nil) {
+            HStack(spacing: 10) {
+                creditTypeChip(title: "All", isSelected: selectedFilter == nil) {
                     selectedFilter = nil
                 }
                 ForEach(CMECreditType.allCases, id: \.self) { type in
-                    FilterChip(title: type.rawValue, isSelected: selectedFilter == type) {
+                    creditTypeChip(title: type.rawValue, isSelected: selectedFilter == type) {
                         selectedFilter = type
                     }
                 }
             }
-            .padding(.horizontal, 4)
         }
-        .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
     }
 
-    // MARK: - Hours Summary
+    private func creditTypeChip(title: String, isSelected: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Text(title)
+                .font(Theme.ui(13, weight: .semibold))
+                .foregroundStyle(isSelected ? .white : Theme.bodyText)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 10)
+                .background(isSelected ? Theme.primaryGradient : LinearGradient(colors: [Theme.surfaceCard], startPoint: .topLeading, endPoint: .bottomTrailing), in: Capsule())
+                .overlay {
+                    Capsule().stroke(isSelected ? Color.clear : Theme.subtleBorder, lineWidth: 1)
+                }
+        }
+        .buttonStyle(.plain)
+    }
 
-    private var hoursSummarySection: some View {
-        Section("Summary by Category") {
-            ForEach(CMECreditType.allCases, id: \.self) { type in
-                let hours = viewModel.totalHours(activities.filter { $0.creditType == type.rawValue })
-                if hours > 0 {
-                    HStack {
-                        Text(type.rawValue)
-                            .font(.subheadline)
-                        Spacer()
-                        Text("\(hours, specifier: "%.1f") hrs")
-                            .font(.subheadline.weight(.semibold).monospacedDigit())
-                            .foregroundStyle(Theme.medicalBlue)
+    private var emptyStateCard: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("No \(educationLabel) activity in this view")
+                .font(Theme.ui(17, weight: .semibold))
+                .foregroundStyle(Theme.bodyText)
+            Text("Log an activity as soon as it is complete so the record stays clean.")
+                .font(Theme.ui(14))
+                .foregroundStyle(Theme.mutedLabel)
+        }
+        .padding(Theme.cardPadding)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Theme.surfaceCard, in: RoundedRectangle(cornerRadius: Theme.radiusMedium))
+        .overlay {
+            RoundedRectangle(cornerRadius: Theme.radiusMedium)
+                .stroke(Theme.subtleBorder, lineWidth: 1)
+        }
+    }
+
+    private var summarySection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Summary by category")
+                .font(Theme.ui(13, weight: .semibold))
+                .tracking(1.4)
+                .foregroundStyle(Theme.copper)
+
+            VStack(spacing: 10) {
+                ForEach(CMECreditType.allCases, id: \.self) { type in
+                    let hours = viewModel.totalHours(activities.filter { $0.creditType == type.rawValue })
+                    if hours > 0 {
+                        HStack {
+                            Text(type.rawValue)
+                                .font(Theme.ui(15, weight: .medium))
+                                .foregroundStyle(Theme.bodyText)
+                            Spacer()
+                            Text("\(hours, specifier: "%.1f") hrs")
+                                .font(Theme.ui(15, weight: .semibold))
+                                .foregroundStyle(Theme.inkAccent)
+                        }
+                        .padding(16)
+                        .background(Theme.surfaceCard, in: RoundedRectangle(cornerRadius: Theme.radiusMedium))
+                        .overlay {
+                            RoundedRectangle(cornerRadius: Theme.radiusMedium)
+                                .stroke(Theme.subtleBorder, lineWidth: 1)
+                        }
                     }
                 }
             }
         }
     }
+
+    private func lockedFeature(icon: String, title: String, subtitle: String) -> some View {
+        HStack(spacing: 14) {
+            RoundedRectangle(cornerRadius: 12)
+                .fill(Theme.inkAccent.opacity(0.12))
+                .frame(width: 44, height: 44)
+                .overlay {
+                    Image(systemName: icon)
+                        .foregroundStyle(Theme.inkAccent)
+                }
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title)
+                    .font(Theme.ui(16, weight: .semibold))
+                    .foregroundStyle(Theme.bodyText)
+                Text(subtitle)
+                    .font(Theme.ui(13))
+                    .foregroundStyle(Theme.mutedLabel)
+            }
+            Spacer()
+        }
+        .padding(16)
+        .background(Theme.surfaceCard, in: RoundedRectangle(cornerRadius: Theme.radiusMedium))
+        .overlay {
+            RoundedRectangle(cornerRadius: Theme.radiusMedium)
+                .stroke(Theme.subtleBorder, lineWidth: 1)
+        }
+    }
 }
 
-// MARK: - Supporting Views
-
-struct CMEActivityRow: View {
+private struct CMEActivityCard: View {
     let activity: CMEActivity
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack {
-                Text(activity.activityTitle)
-                    .font(.body.weight(.medium))
-                Spacer()
-                Text("\(activity.hours, specifier: "%.1f") hrs")
-                    .font(.subheadline.weight(.semibold).monospacedDigit())
-                    .foregroundStyle(Theme.medicalBlue)
-            }
-            HStack(spacing: 8) {
-                Text(activity.creditType)
-                    .font(.caption)
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 2)
-                    .background(Theme.medicalBlue.opacity(0.1))
-                    .clipShape(Capsule())
-                if !activity.provider.isEmpty {
-                    Text(activity.provider)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+        VStack(alignment: .leading, spacing: 14) {
+            HStack(alignment: .top) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(activity.activityTitle)
+                        .font(Theme.ui(17, weight: .semibold))
+                        .foregroundStyle(Theme.bodyText)
+                    Text(activity.provider.isEmpty ? "Provider not added" : activity.provider)
+                        .font(Theme.ui(13))
+                        .foregroundStyle(Theme.mutedLabel)
                 }
                 Spacer()
-                Text(activity.dateCompleted.formatted(.dateTime.month(.abbreviated).day().year()))
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
+                Text("\(activity.hours, specifier: "%.1f") hrs")
+                    .font(Theme.ui(15, weight: .semibold))
+                    .foregroundStyle(Theme.inkAccent)
+            }
+
+            HStack(spacing: 10) {
+                cmePill(title: activity.creditType)
+                cmePill(title: activity.dateCompleted.formatted(.dateTime.month(.abbreviated).day().year()))
+            }
+
+            if let notes = activity.notes, !notes.isEmpty {
+                Text(notes)
+                    .font(Theme.ui(13))
+                    .foregroundStyle(Theme.mutedLabel)
             }
         }
-        .padding(.vertical, 4)
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(activity.activityTitle), \(activity.hours, specifier: "%.1f") hours, \(activity.creditType)")
-    }
-}
-
-struct FilterChip: View {
-    let title: String
-    let isSelected: Bool
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            Text(title)
-                .font(.caption.weight(.medium))
-                .foregroundStyle(isSelected ? .white : .primary)
-                .padding(.horizontal, 14)
-                .padding(.vertical, 8)
-                .background(isSelected ? Theme.medicalBlue : Color(.secondarySystemGroupedBackground))
-                .clipShape(Capsule())
+        .padding(Theme.cardPadding)
+        .background(Theme.surfaceCard, in: RoundedRectangle(cornerRadius: Theme.radiusLarge))
+        .overlay {
+            RoundedRectangle(cornerRadius: Theme.radiusLarge)
+                .stroke(Theme.subtleBorder, lineWidth: 1)
         }
-        .sensoryFeedback(.selection, trigger: isSelected)
     }
-}
 
-struct FeatureRow: View {
-    let icon: String
-    let text: String
-
-    var body: some View {
-        HStack(spacing: 14) {
-            Image(systemName: icon)
-                .font(.body)
-                .foregroundStyle(Theme.medicalBlue)
-                .frame(width: 28)
-            Text(text)
-                .font(.subheadline)
-                .foregroundStyle(.primary)
-            Spacer()
-        }
+    private func cmePill(title: String) -> some View {
+        Text(title)
+            .font(Theme.ui(12, weight: .semibold))
+            .foregroundStyle(Theme.bodyText)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .background(Theme.surfaceMuted.opacity(0.7), in: Capsule())
     }
 }

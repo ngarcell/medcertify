@@ -6,67 +6,59 @@ struct OnboardingWelcomeView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            Spacer()
+            Spacer(minLength: 28)
 
-            VStack(spacing: 24) {
-                ZStack {
-                    Circle()
-                        .fill(Theme.medicalBlue.opacity(0.1))
-                        .frame(width: 120, height: 120)
-                    Image(systemName: "shield.checkered")
-                        .font(.system(size: 52))
-                        .foregroundStyle(Theme.medicalBlue)
-                        .symbolEffect(.bounce, value: animateIn)
-                }
-                .scaleEffect(animateIn ? 1 : 0.5)
-                .opacity(animateIn ? 1 : 0)
+            VStack(alignment: .leading, spacing: 22) {
+                Text("MedCertify")
+                    .font(Theme.ui(13, weight: .semibold))
+                    .tracking(2.6)
+                    .foregroundStyle(Theme.copper)
+                    .opacity(animateIn ? 1 : 0)
 
-                VStack(spacing: 12) {
-                    Text("Never risk a\nlicense lapse.")
-                        .font(.system(.largeTitle, weight: .bold))
-                        .multilineTextAlignment(.center)
-                        .opacity(animateIn ? 1 : 0)
-                        .offset(y: animateIn ? 0 : 20)
+                Text("A credential desk built for real clinical work.")
+                    .font(Theme.display(40, relativeTo: .largeTitle, prominent: true))
+                    .foregroundStyle(Theme.headerText)
+                    .opacity(animateIn ? 1 : 0)
+                    .offset(y: animateIn ? 0 : 18)
 
-                    Text("Track every credential, certificate,\nand CME hour — all in one place.")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                        .multilineTextAlignment(.center)
-                        .opacity(animateIn ? 1 : 0)
-                        .offset(y: animateIn ? 0 : 20)
-                }
+                Text("Keep licenses, board renewals, education credits, and proof in one calm system you can trust when a deadline gets close.")
+                    .font(Theme.ui(17))
+                    .foregroundStyle(Theme.mutedLabel)
+                    .opacity(animateIn ? 1 : 0)
+                    .offset(y: animateIn ? 0 : 18)
             }
+            .padding(.horizontal, Theme.screenPadding)
 
-            Spacer()
-
-            VStack(spacing: 20) {
-                ValueBullet(icon: "checklist", text: "Track licenses, certifications, and DEA in one place")
-                ValueBullet(icon: "bell.badge.fill", text: "Get renewal reminders months in advance")
-                ValueBullet(icon: "doc.text.fill", text: "Log CME credits with certificate storage")
+            VStack(spacing: 14) {
+                welcomeFeature(title: "Renewal-ready at a glance", subtitle: "See what needs action before a board or employer asks.")
+                welcomeFeature(title: "Proof where you need it", subtitle: "Store certificates and confirmations with the right credential.")
+                welcomeFeature(title: "Built around your role", subtitle: "Physicians, APPs, nurses, pharmacists, and dental teams can all make it their own.")
             }
-            .padding(.horizontal, 24)
+            .padding(.horizontal, Theme.screenPadding)
+            .padding(.top, 30)
             .opacity(animateIn ? 1 : 0)
 
             Spacer()
 
-            VStack(spacing: 8) {
+            VStack(spacing: 10) {
                 Button {
                     viewModel.nextPage()
                 } label: {
-                    Text("Get Started — Free")
-                        .font(.headline)
+                    Text("Set up my credential desk")
+                        .font(Theme.ui(17, weight: .semibold))
+                        .foregroundStyle(.white)
                         .frame(maxWidth: .infinity)
-                        .padding(.vertical, 16)
+                        .padding(.vertical, 18)
+                        .background(Theme.primaryGradient, in: RoundedRectangle(cornerRadius: 20))
                 }
-                .buttonStyle(.borderedProminent)
-                .tint(Theme.medicalBlue)
+                .buttonStyle(.plain)
 
-                Text("Set up in 2 minutes")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                Text("Local-first. No patient data. Setup takes a minute or two.")
+                    .font(Theme.ui(13))
+                    .foregroundStyle(Theme.mutedLabel)
             }
-            .padding(.horizontal, 24)
-            .padding(.bottom, 16)
+            .padding(.horizontal, Theme.screenPadding)
+            .padding(.bottom, 20)
         }
         .onAppear {
             withAnimation(.spring(duration: 0.8, bounce: 0.3)) {
@@ -74,22 +66,22 @@ struct OnboardingWelcomeView: View {
             }
         }
     }
-}
 
-struct ValueBullet: View {
-    let icon: String
-    let text: String
-
-    var body: some View {
-        HStack(spacing: 14) {
-            Image(systemName: icon)
-                .font(.body)
-                .foregroundStyle(Theme.medicalBlue)
-                .frame(width: 28)
-            Text(text)
-                .font(.subheadline)
-                .foregroundStyle(.primary)
-            Spacer()
+    private func welcomeFeature(title: String, subtitle: String) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(title)
+                .font(Theme.ui(17, weight: .semibold))
+                .foregroundStyle(Theme.bodyText)
+            Text(subtitle)
+                .font(Theme.ui(14))
+                .foregroundStyle(Theme.mutedLabel)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(Theme.cardPadding)
+        .background(Theme.surfaceCard, in: RoundedRectangle(cornerRadius: Theme.radiusMedium))
+        .overlay {
+            RoundedRectangle(cornerRadius: Theme.radiusMedium)
+                .stroke(Theme.subtleBorder, lineWidth: 1)
         }
     }
 }

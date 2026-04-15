@@ -66,9 +66,27 @@ class CredentialViewModel {
     }
 
     func upcomingRenewals(_ credentials: [Credential]) -> [Credential] {
-        credentials
+        prioritySorted(credentials)
             .filter { $0.status == .expiringSoon || $0.status == .expired }
-            .sorted { ($0.daysUntilExpiration ?? Int.max) < ($1.daysUntilExpiration ?? Int.max) }
+    }
+
+    func prioritySorted(_ credentials: [Credential]) -> [Credential] {
+        credentials.sorted { lhs, rhs in
+            if lhs.urgencyRank != rhs.urgencyRank {
+                return lhs.urgencyRank < rhs.urgencyRank
+            }
+            return (lhs.daysUntilExpiration ?? Int.max) < (rhs.daysUntilExpiration ?? Int.max)
+        }
+    }
+
+    func attentionCredentials(_ credentials: [Credential]) -> [Credential] {
+        prioritySorted(credentials).filter { $0.status == .expired || $0.status == .expiringSoon || $0.status == .pending }
+    }
+
+    func compliancePercentage(_ credentials: [Credential]) -> Int {
+        guard !credentials.isEmpty else { return 100 }
+        let activeCount = credentials.filter { $0.status == .current }.count
+        return Int((Double(activeCount) / Double(credentials.count) * 100).rounded())
     }
 
     func healthScore(_ credentials: [Credential]) -> HealthScore {

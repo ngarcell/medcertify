@@ -2,10 +2,9 @@ import SwiftUI
 import VisionKit
 import PDFKit
 
-/// VNDocumentCameraViewController wrapper for SwiftUI
 struct DocumentScannerView: UIViewControllerRepresentable {
-    var onScanComplete: (Data, String) -> Void
-    var onCancel: () -> Void
+    let onScanComplete: @MainActor (Data, String) -> Void
+    let onCancel: @MainActor () -> Void
 
     func makeCoordinator() -> Coordinator {
         Coordinator(onScanComplete: onScanComplete, onCancel: onCancel)
@@ -19,17 +18,16 @@ struct DocumentScannerView: UIViewControllerRepresentable {
 
     func updateUIViewController(_ uiViewController: VNDocumentCameraViewController, context: Context) {}
 
-    class Coordinator: NSObject, VNDocumentCameraViewControllerDelegate {
-        let onScanComplete: (Data, String) -> Void
-        let onCancel: () -> Void
+    final class Coordinator: NSObject, VNDocumentCameraViewControllerDelegate {
+        let onScanComplete: @MainActor (Data, String) -> Void
+        let onCancel: @MainActor () -> Void
 
-        init(onScanComplete: @escaping (Data, String) -> Void, onCancel: @escaping () -> Void) {
+        init(onScanComplete: @escaping @MainActor (Data, String) -> Void, onCancel: @escaping @MainActor () -> Void) {
             self.onScanComplete = onScanComplete
             self.onCancel = onCancel
         }
 
-        func documentCameraViewController(_ controller: VNDocumentCameraViewController, didFinishWith scan: VNDocumentCameraScan) {
-            // Combine all scanned pages into a single PDF
+        nonisolated func documentCameraViewController(_ controller: VNDocumentCameraViewController, didFinishWith scan: VNDocumentCameraScan) {
             let pdfDocument = PDFDocument()
 
             for pageIndex in 0..<scan.pageCount {
@@ -40,22 +38,26 @@ struct DocumentScannerView: UIViewControllerRepresentable {
             }
 
             let fileName = "Scan_\(Date().formatted(.dateTime.year().month().day().hour().minute()))"
+            let pdfData = pdfDocument.dataRepresentation()
+            let jpegData = scan.pageCount > 0 ? scan.imageOfPage(at: 0).jpegData(compressionQuality: 0.9) : nil
 
-            if let pdfData = pdfDocument.dataRepresentation() {
-                onScanComplete(pdfData, fileName)
-            } else if let jpegData = scan.imageOfPage(at: 0).jpegData(compressionQuality: 0.9) {
-                // Fallback: save first page as JPEG
-                onScanComplete(jpegData, fileName)
+            guard let data = pdfData ?? jpegData else { return }
+
+            Task { @MainActor in
+                onScanComplete(data, fileName)
             }
         }
 
-        func documentCameraViewControllerDidCancel(_ controller: VNDocumentCameraViewController) {
-            onCancel()
+        nonisolated func documentCameraViewControllerDidCancel(_ controller: VNDocumentCameraViewController) {
+            Task { @MainActor in
+                onCancel()
+            }
         }
 
-        func documentCameraViewController(_ controller: VNDocumentCameraViewController, didFailWithError error: Error) {
-            print("Document scanning failed: \(error)")
-            onCancel()
+        nonisolated func documentCameraViewController(_ controller: VNDocumentCameraViewController, didFailWithError error: Error) {
+            Task { @MainActor in
+                onCancel()
+            }
         }
     }
 }

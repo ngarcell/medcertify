@@ -297,7 +297,7 @@ class SubscriptionManager {
     }
 }
 
-enum StoreError: Error {
+nonisolated enum StoreError: Error, Sendable {
     case failedVerification
 }
 

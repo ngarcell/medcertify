@@ -138,7 +138,7 @@ func onboardingHeader(step: Int, title: String, subtitle: String) -> some View {
 func onboardingFooterButton(title: String, isDisabled: Bool = false, action: @escaping () -> Void) -> some View {
     VStack(spacing: 0) {
         Divider()
-            .overlay(Theme.subtleBorder)
+            .background(Theme.subtleBorder)
 
         Button(action: action) {
             Text(title)
@@ -146,7 +146,13 @@ func onboardingFooterButton(title: String, isDisabled: Bool = false, action: @es
                 .foregroundStyle(.white)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 17)
-                .background(isDisabled ? Theme.inkSoft.opacity(0.35) : Theme.primaryGradient, in: RoundedRectangle(cornerRadius: 18))
+                .background(in: RoundedRectangle(cornerRadius: 18)) {
+                    if isDisabled {
+                        Theme.inkSoft.opacity(0.35)
+                    } else {
+                        Theme.primaryGradient
+                    }
+                }
         }
         .buttonStyle(.plain)
         .disabled(isDisabled)
